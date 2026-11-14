@@ -1,0 +1,264 @@
+{
+  "network": "testnet",
+  "contract_id": "crunch-oracle-8fa9a2b8.testnet",
+  "updated_at": "2026-11-14T03:31:59Z",
+  "status": "recorded",
+  "rpc": "https://rpc.testnet.near.org",
+  "chain": {
+    "owner": "crunch-oracle-8fa9a2b8.testnet",
+    "oracle": "crunch-oracle-8fa9a2b8.testnet",
+    "match_count": 4,
+    "receipt_count": 2,
+    "matches": [
+      {
+        "match_id": "bl1-2026-83231",
+        "competition": "bundesliga",
+        "season": "2026",
+        "home": "TSG Hoffenheim",
+        "away": "FC Schalke 04",
+        "source_kickoff_ms": 1794162600000,
+        "deadline_ms": 1794626964565,
+        "source_url": "https://api.openligadb.de/getmatchdata/83231",
+        "historical_replay": true,
+        "agent": "crunch-oracle-8fa9a2b8.testnet",
+        "commitment": "44e6ac35829d71497417965cd5d3c151144485b001e97e8ec5b23502e3d5cddc",
+        "committed_at_ms": 1794626817283,
+        "reveal": {
+          "home_bps": 5673,
+          "draw_bps": 2349,
+          "away_bps": 1978,
+          "salt": "dbffdad241d9cd815c977008421b8f28",
+          "revealed_at_ms": 1794626829980
+        },
+        "result": {
+          "home_goals": 2,
+          "away_goals": 1,
+          "outcome": "Home",
+          "posted_at_ms": 1794627021457
+        },
+        "score": {
+          "brier_micro": 281532,
+          "scored_at_ms": 1794627031021
+        }
+      },
+      {
+        "match_id": "bl1-2026-83232",
+        "competition": "bundesliga",
+        "season": "2026",
+        "home": "SC Freiburg",
+        "away": "1. FC Union Berlin",
+        "source_kickoff_ms": 1794155400000,
+        "deadline_ms": 1794626964565,
+        "source_url": "https://api.openligadb.de/getmatchdata/83232",
+        "historical_replay": true,
+        "agent": "crunch-oracle-8fa9a2b8.testnet",
+        "commitment": "c1d7bba530338b02dec8128babb4199ce3764b05f96daa1fae3614f9de17483e",
+        "committed_at_ms": 1794626782072,
+        "reveal": {
+          "home_bps": 5883,
+          "draw_bps": 2118,
+          "away_bps": 1999,
+          "salt": "54b636e81ec853d148f1d5f0652a82bc",
+          "revealed_at_ms": 1794626794916
+        },
+        "result": {
+          "home_goals": 2,
+          "away_goals": 0,
+          "outcome": "Home",
+          "posted_at_ms": 1794627003190
+        },
+        "score": {
+          "brier_micro": 254316,
+          "scored_at_ms": 1794627012215
+        }
+      },
+      {
+        "match_id": "bl1-2026-83235",
+        "competition": "bundesliga",
+        "season": "2026",
+        "home": "1. FC K\u00f6ln",
+        "away": "Bayer 04 Leverkusen",
+        "source_kickoff_ms": 1794148200000,
+        "deadline_ms": 1794626964565,
+        "source_url": "https://api.openligadb.de/getmatchdata/83235",
+        "historical_replay": true,
+        "agent": "crunch-oracle-8fa9a2b8.testnet",
+        "commitment": "abf7f80ea4b0242be042eedcba37745353255bb2dc9ae6f9fbdcb1f5e6a9cb05",
+        "committed_at_ms": 1794626748227,
+        "reveal": {
+          "home_bps": 3091,
+          "draw_bps": 2246,
+          "away_bps": 4663,
+          "salt": "6663e7d2a31d9035a8b21b767527a868",
+          "revealed_at_ms": 1794626760886
+        },
+        "result": {
+          "home_goals": 1,
+          "away_goals": 2,
+          "outcome": "Away",
+          "posted_at_ms": 1794626984882
+        },
+        "score": {
+          "brier_micro": 430823,
+          "scored_at_ms": 1794626993756
+        }
+      },
+      {
+        "match_id": "bl1-2026-83237",
+        "competition": "bundesliga",
+        "season": "2026",
+        "home": "FC Bayern M\u00fcnchen",
+        "away": "1. FC K\u00f6ln",
+        "source_kickoff_ms": 1795203000000,
+        "deadline_ms": 1795203000000,
+        "source_url": "https://api.openligadb.de/getmatchdata/83237",
+        "historical_replay": false,
+        "agent": "crunch-oracle-8fa9a2b8.testnet",
+        "commitment": "35f821d2a2ce129fa6ac177af5c4d4f0295d0863da7c6990c70428e0534d6a88",
+        "committed_at_ms": 1794626851792,
+        "reveal": {
+          "home_bps": 8874,
+          "draw_bps": 727,
+          "away_bps": 399,
+          "salt": "a973f9b34924fa49fb934cb97d8c8aa2",
+          "revealed_at_ms": 1794626864537
+        },
+        "result": null,
+        "score": null
+      }
+    ],
+    "receipts": [
+      {
+        "id": 1,
+        "buyer_label": "replay-reader",
+        "match_id": "bl1-2026-83235",
+        "origin_asset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+        "destination_asset": "nep141:wrap.near",
+        "amount_in": "2000000",
+        "amount_out": "591044486950177046263344",
+        "amount_in_formatted": "2.0",
+        "amount_out_formatted": "0.59104448",
+        "quote_hash": "01ef790b1e47adcdd01e812c6e4a288e75914afb0e6c1365056570ba783d95a5",
+        "dry": true,
+        "recorded_at_ms": 1794627104292
+      },
+      {
+        "id": 2,
+        "buyer_label": "pre-kickoff-reader",
+        "match_id": "bl1-2026-83237",
+        "origin_asset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+        "destination_asset": "nep141:wrap.near",
+        "amount_in": "2000000",
+        "amount_out": "590353814766968472468916",
+        "amount_in_formatted": "2.0",
+        "amount_out_formatted": "0.59035381",
+        "quote_hash": "718809c644b9d26f5d8416affb14305d1c01ec1d1226b7a457f0bfd0e02c2eb8",
+        "dry": true,
+        "recorded_at_ms": 1794627114152
+      }
+    ],
+    "agents": [
+      {
+        "agent": "crunch-oracle-8fa9a2b8.testnet",
+        "committed": 4,
+        "revealed": 4,
+        "scored": 3,
+        "brier_micro_sum": 966671,
+        "mean_brier_micro": 322223
+      }
+    ]
+  },
+  "transactions": {
+    "deploy": "7ogjjBeyVBGU6Lwfmo7dgV2o9RyvhMNbWyNqQzvwkgSW",
+    "matches": {
+      "bl1-2026-83235": {
+        "register": "8EkQA72E6shngFENXepVhMce3Ftny8j44SocuwvA7Xgt",
+        "commit": "8S38BoiM7D4NVkePRcYh5ZE5L1g2BeUxLNLEN3VddN45",
+        "reveal": "C3y7dTD39HpowQvZudytrFDLJtU7nP6DDz6dEiKDEJ2r",
+        "result": "GAaLS4Yvz3BbtVjrvHHBG4VZkFb57GGsS8inWS6fkfDB",
+        "score": "3UPTr6619Zv9pWJXb2z9FFqC7976oPMzn5yjsqHwKxwE"
+      },
+      "bl1-2026-83232": {
+        "register": "H9a6xQoezLu5zVKPgRikBSSFBBnRugWjW7aNX1KuSuWw",
+        "commit": "38v3U7ExRPAMBoQ9icDeL1UXuALPnYofLVxKnqAuTfFt",
+        "reveal": "EtgVNgmMmBKZE1D4f4LrHyeQP1PgG9zyHA4SgrrBhiem",
+        "result": "FyignPeyoaAjiABUTYUYge3LKgsqiSruckAyTkGmgvvD",
+        "score": "E4BEHtCgYZArvsdPdLGksVtwHXCENX7CTFVpm2kVTRoM"
+      },
+      "bl1-2026-83231": {
+        "register": "Dx4HSwvMc1ubhLYeXsdXKLvRYFZm6DcTYbzWzxzPuJfX",
+        "commit": "AsxvQ1HyW3cJfAhyRyRfYkUHi11fhU6BHH2kkS4qjvek",
+        "reveal": "5xfSpAAPq6V8yRTy1GwvADd9968kHo6CBkejxtwkLW9i",
+        "result": "ANBZJZ489qB51GhnmAv6ZKCTkepLNHuNy1hgQ21i671P",
+        "score": "CyUEDrGdm7LLNSEwqYwcKFkMgapHyj8gbATqFULFNLqu"
+      },
+      "bl1-2026-83237": {
+        "register": "DHKARvS69Y8APZA7dE75zSMHSjYgD6fLodAzCDM5huZX",
+        "commit": "F89q4FnHSnzoNybmDTuJSJzA2pLak8UC2tV3hCN7nTEu",
+        "reveal": "3azoLXndckFP3t7bH2tCUWq5FmUXLuZZGNmc9UkzWTdT"
+      }
+    },
+    "receipts": {
+      "replay-reader": "6Df3sWCLPsR2QnnvibVtKT1bdMiYzRaL39j5KGs5A1pM",
+      "pre-kickoff-reader": "6gGM4Sg79F4zT6ZcxeB96xsk4peWjepdYb2o1to8TCCh"
+    }
+  },
+  "model_notes": {
+    "bl1-2026-83235": {
+      "home_xg": 1.4821,
+      "away_xg": 1.8593,
+      "prior_matches": 384,
+      "model": "independent-poisson-v1"
+    },
+    "bl1-2026-83232": {
+      "home_xg": 2.024,
+      "away_xg": 1.0954,
+      "prior_matches": 385,
+      "model": "independent-poisson-v1"
+    },
+    "bl1-2026-83231": {
+      "home_xg": 1.7467,
+      "away_xg": 0.9257,
+      "prior_matches": 386,
+      "model": "independent-poisson-v1"
+    },
+    "bl1-2026-83237": {
+      "home_xg": 3.8972,
+      "away_xg": 0.858,
+      "prior_matches": 387,
+      "model": "independent-poisson-v1"
+    }
+  },
+  "quotes": [
+    {
+      "dry": true,
+      "origin_asset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "destination_asset": "nep141:wrap.near",
+      "amount_in": "2000000",
+      "amount_out": "591044486950177046263344",
+      "amount_in_formatted": "2.0",
+      "amount_out_formatted": "0.59104448",
+      "time_estimate_s": 47,
+      "quote_hash": "01ef790b1e47adcdd01e812c6e4a288e75914afb0e6c1365056570ba783d95a5",
+      "buyer_label": "replay-reader",
+      "match_id": "bl1-2026-83235",
+      "transaction": "6Df3sWCLPsR2QnnvibVtKT1bdMiYzRaL39j5KGs5A1pM"
+    },
+    {
+      "dry": true,
+      "origin_asset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "destination_asset": "nep141:wrap.near",
+      "amount_in": "2000000",
+      "amount_out": "590353814766968472468916",
+      "amount_in_formatted": "2.0",
+      "amount_out_formatted": "0.59035381",
+      "time_estimate_s": 47,
+      "quote_hash": "718809c644b9d26f5d8416affb14305d1c01ec1d1226b7a457f0bfd0e02c2eb8",
+      "buyer_label": "pre-kickoff-reader",
+      "match_id": "bl1-2026-83237",
+      "transaction": "6gGM4Sg79F4zT6ZcxeB96xsk4peWjepdYb2o1to8TCCh"
+    }
+  ],
+  "plan_as_of": "2026-11-14T03:25:24Z",
+  "replay_deadline_ms": 1794626964565
+}

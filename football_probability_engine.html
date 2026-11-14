@@ -1,0 +1,1523 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leagues & Fixture Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --bg: #060d09;
+    --bg2: #0c1510;
+    --card: #111c15;
+    --card-hover: #162019;
+    --border: #1e3027;
+    --border-light: #2a4035;
+    --text: #e0ebe4;
+    --text2: #8fa898;
+    --muted: #4d6356;
+    --accent: #00e676;
+    --accent-dim: #00c864;
+    --accent-glow: rgba(0,230,118,0.12);
+    --warning: #ffab40;
+    --danger: #ff5252;
+    --info: #40c4ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,230,118,0.04) 0%, transparent 60%),
+      linear-gradient(rgba(30,48,39,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30,48,39,0.3) 1px, transparent 1px);
+    background-size: 100% 100%, 60px 60px, 60px 60px;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .main { min-height: 100vh; position: relative; z-index: 1; }
+  .view { display: none; padding: 28px 32px 48px; animation: fadeUp 0.35s ease; }
+  .view.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .metric-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .metric-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+  .metric-card::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .metric-card:hover::after { opacity: 1; }
+  .metric-val { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+  .metric-label { color: var(--text2); font-size: 0.85rem; margin-top: 4px; }
+  .flow-node {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 18px; text-align: center; position: relative; min-width: 120px;
+    transition: all 0.3s;
+  }
+  .flow-node:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+  .flow-arrow {
+    display: flex; align-items: center; color: var(--muted); font-size: 1.2rem;
+    position: relative; min-width: 40px; justify-content: center;
+  }
+  .flow-arrow .dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+    position: absolute; animation: flowDot 2s linear infinite;
+  }
+  @keyframes flowDot {
+    0% { left: 0; opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  .match-center-shell {
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    background: var(--bg2); min-width: 0;
+  }
+  .sports-strip {
+    display: flex; align-items: center; gap: 4px; padding: 8px 10px;
+    border-bottom: 1px solid var(--border); background: var(--card);
+    overflow-x: auto;
+  }
+  .sport-switch {
+    min-width: 92px; height: 42px; border: 0; border-bottom: 2px solid transparent;
+    background: transparent; color: var(--text2); cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 0 12px; transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .sport-switch:hover { background: var(--card-hover); color: var(--text); }
+  .sport-switch.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .sport-switch-count {
+    min-width: 24px; padding: 2px 6px; border-radius: 4px; background: var(--bg2);
+    color: var(--muted); font: 500 0.68rem 'JetBrains Mono', monospace;
+  }
+  .sport-switch.active .sport-switch-count { color: var(--accent); background: var(--accent-glow); }
+  .sports-strip, .research-jumpbar { position: relative; isolation: isolate; }
+  .sports-strip > :not(.selection-indicator), .research-jumpbar > :not(.selection-indicator) { position: relative; z-index: 1; }
+  .selection-indicator { position: absolute; left: 0; bottom: 0; height: 2px; pointer-events: none; background: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent); transition: transform 420ms cubic-bezier(.22,1,.36,1), width 420ms cubic-bezier(.22,1,.36,1), opacity 120ms ease; opacity: 0; }
+  .selection-indicator.ready { opacity: 1; }
+  .sports-strip > .sport-switch.active, .research-jumpbar > button.active { border-bottom-color: transparent; }
+  @media (prefers-reduced-motion: reduce) { .selection-indicator { transition-duration: .01ms; } }
+  .match-center-grid {
+    display: grid; grid-template-columns: minmax(210px, 245px) minmax(310px, 370px) minmax(480px, 1fr);
+    align-items: stretch; min-width: 0; min-height: 680px;
+  }
+  .match-center-panel { min-width: 0; background: var(--bg2); }
+  .match-center-panel + .match-center-panel { border-left: 1px solid var(--border); }
+  .match-panel-heading {
+    min-height: 48px; padding: 0 14px; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 0.82rem; font-weight: 600;
+  }
+  .match-panel-heading span { color: var(--muted); font: 500 0.68rem 'JetBrains Mono', monospace; }
+  .match-panel-scroll {
+    max-height: calc(100vh - 138px); min-height: 630px; overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+  .competition-row {
+    width: 100%; min-height: 62px; padding: 10px 12px; border: 0;
+    border-bottom: 1px solid rgba(30,48,39,0.72); background: transparent;
+    color: var(--text); cursor: pointer; font-family: inherit; text-align: left;
+    display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 10px;
+    align-items: center; transition: background 0.2s;
+  }
+  .competition-row:hover { background: var(--card-hover); }
+  .competition-row.active { background: var(--accent-glow); box-shadow: inset 3px 0 0 var(--accent); }
+  .competition-icon {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--card);
+    border: 1px solid var(--border); display: inline-flex; align-items: center;
+    justify-content: center; color: var(--text2); flex: 0 0 auto;
+  }
+  .competition-row.active .competition-icon { color: var(--accent); border-color: rgba(0,230,118,0.35); }
+  .competition-name { font-size: 0.82rem; font-weight: 600; color: var(--text); line-height: 1.25; }
+  .competition-meta { margin-top: 3px; color: var(--muted); font-size: 0.68rem; line-height: 1.3; }
+  .competition-count {
+    min-width: 30px; padding: 4px 6px; border-radius: 4px; text-align: center;
+    background: var(--card); color: var(--text2); font: 500 0.68rem 'JetBrains Mono', monospace;
+  }
+  .fixture-day {
+    position: sticky; top: 0; z-index: 3; height: 30px; padding: 0 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0a120d; border-bottom: 1px solid var(--border);
+    color: var(--text2); font-size: 0.7rem; font-weight: 600;
+  }
+  .fixture-row {
+    width: 100%; min-height: 84px; padding: 10px 10px; border: 0;
+    border-bottom: 1px solid rgba(30,48,39,0.72); background: transparent;
+    color: var(--text); cursor: pointer; font-family: inherit; text-align: left;
+    display: grid; grid-template-columns: 48px minmax(0,1fr) 24px; gap: 8px;
+    align-items: center; transition: background 0.2s;
+  }
+  .fixture-row:hover { background: var(--card-hover); }
+  .fixture-row.active { background: var(--accent-glow); box-shadow: inset 3px 0 0 var(--accent); }
+  .fixture-time {
+    color: var(--text2); text-align: center; font: 600 0.72rem 'JetBrains Mono', monospace;
+  }
+  .fixture-time span { display: block; color: var(--muted); font-size: 0.62rem; margin-top: 4px; }
+  .fixture-teams { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .fixture-team {
+    min-width: 0; display: flex; align-items: center; gap: 8px;
+    color: var(--text); font-size: 0.8rem; font-weight: 500;
+  }
+  .fixture-team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team-mark {
+    position: relative; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text2); font: 600 0.58rem 'JetBrains Mono', monospace;
+    overflow: hidden; flex: 0 0 auto;
+  }
+  .team-mark img { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); object-fit: contain; }
+  .team-mark.large { width: 58px; height: 58px; font-size: 0.8rem; background: var(--bg2); }
+  .lineup-rosters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .lineup-team { min-width: 0; }
+  .lineup-player-list { border-top: 1px solid var(--border); }
+  .lineup-player-row {
+    min-height: 50px; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(30,48,39,0.72);
+  }
+  .lineup-player-photo {
+    position: relative; width: 34px; height: 34px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+    background: var(--card); border: 1px solid var(--border); color: var(--text2);
+    font: 600 0.62rem 'JetBrains Mono', monospace;
+  }
+  .lineup-player-photo img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    background: var(--card);
+  }
+  .lineup-player-copy, .lineup-player-name, .lineup-player-meta { display: block; }
+  .lineup-player-copy { min-width: 0; }
+  .lineup-player-name {
+    color: var(--text); font-size: 0.76rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lineup-player-meta { color: var(--muted); font-size: 0.66rem; margin-top: 2px; }
+  .lineup-player-number { color: var(--text2); font: 600 0.68rem 'JetBrains Mono', monospace; }
+  .fixture-signal { display: flex; justify-content: center; color: var(--muted); }
+  .fixture-row.has-analysis .fixture-signal { color: var(--accent); }
+  .fixture-subline {
+    grid-column: 2 / 4; display: flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 0.64rem; white-space: nowrap; overflow: hidden;
+  }
+  .fixture-subline span { overflow: hidden; text-overflow: ellipsis; }
+  .fixture-list-summary { padding: 8px 12px; color: var(--muted); font-size: 0.68rem; border-bottom: 1px solid var(--border); }
+  .fixture-research-surface { min-width: 0; min-height: 680px; background: var(--bg2); }
+  .fixture-research-inner { padding: 16px 18px 30px; }
+  .match-scoreboard {
+    padding: 18px 20px 16px; border-bottom: 1px solid var(--border);
+    background: var(--card); text-align: center;
+  }
+  .scoreboard-meta { color: var(--muted); font-size: 0.7rem; margin-bottom: 16px; }
+  .scoreboard-teams {
+    display: grid; grid-template-columns: minmax(110px,1fr) 92px minmax(110px,1fr);
+    align-items: center; gap: 16px;
+  }
+  .scoreboard-team { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .scoreboard-team-name { color: var(--text); font-size: 0.92rem; font-weight: 700; line-height: 1.25; }
+  .scoreboard-center { color: var(--muted); }
+  .scoreboard-center strong { display: block; color: var(--text); font-size: 1.05rem; margin: 4px 0; }
+  .scoreboard-center span { font-size: 0.67rem; }
+  .scoreboard-source {
+    display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 14px; color: var(--muted); font-size: 0.67rem;
+  }
+  .research-jumpbar {
+    position: sticky; top: 0; z-index: 4; display: flex; gap: 2px; overflow-x: auto;
+    padding: 0 10px; background: rgba(17,28,21,0.97); border-bottom: 1px solid var(--border);
+  }
+  .research-jumpbar button {
+    height: 42px; padding: 0 11px; border: 0; border-bottom: 2px solid transparent;
+    background: transparent; color: var(--text2); cursor: pointer; font-family: inherit;
+    font-size: 0.72rem; white-space: nowrap;
+  }
+  .research-jumpbar button:hover { color: var(--text); }
+  .research-jumpbar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .research-tab-panel { display: none; min-width: 0; }
+  .research-tab-panel.active { display: block; animation: fadeUp 0.2s ease; }
+  .research-tab-panel.active.research-probability-grid { display: grid; }
+  .research-probability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;
+  }
+  .badge-green { background: rgba(0,230,118,0.12); color: var(--accent); }
+  .badge-amber { background: rgba(255,171,64,0.12); color: var(--warning); }
+  .badge-red { background: rgba(255,82,82,0.12); color: var(--danger); }
+  .badge-blue { background: rgba(64,196,255,0.12); color: var(--info); }
+  .badge-gray { background: rgba(77,99,86,0.2); color: var(--muted); }
+  select, input {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 10px 14px; font-family: inherit; font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+  .prob-bar { height: 8px; border-radius: 4px; background: var(--bg2); overflow: hidden; }
+  .prob-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .step-reveal { opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+  .step-reveal.visible { opacity: 1; transform: translateY(0); }
+  .scroll-x { overflow-x: auto; }
+  .backtest-table th, .backtest-table td { padding: 10px 8px; white-space: nowrap; }
+  .market-horizon-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0 18px; min-width: 0;
+  }
+  .market-horizon-item { padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
+  .market-selection-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  @media (max-width: 1280px) {
+    .match-center-grid { grid-template-columns: 220px 330px minmax(420px, 1fr); }
+  }
+  @media (max-width: 1050px) {
+    .match-center-grid { grid-template-columns: minmax(210px, 0.75fr) minmax(300px, 1fr); }
+    .match-center-panel.detail-panel { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+    .match-panel-scroll { max-height: 540px; min-height: 420px; }
+    .fixture-research-surface { min-height: 540px; }
+  }
+  @media (max-width: 768px) {
+    .main { width: 100%; min-width: 0; overflow-x: hidden; }
+    .view { padding: 16px; min-width: 0; max-width: 100%; }
+    #bt-details, #bt-details > div { min-width: 0; max-width: 100%; }
+    .prediction-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .prediction-config { position: static !important; }
+    .match-center-grid { grid-template-columns: minmax(0, 1fr); }
+    .match-center-panel + .match-center-panel { border-left: 0; border-top: 1px solid var(--border); }
+    .match-center-panel.detail-panel { grid-column: auto; }
+    .match-panel-scroll { max-height: 460px; min-height: 320px; }
+    .fixture-research-surface { min-height: 480px; }
+    .scoreboard-teams { grid-template-columns: minmax(80px,1fr) 58px minmax(80px,1fr); gap: 8px; }
+    .team-mark.large { width: 46px; height: 46px; }
+    .lineup-rosters { grid-template-columns: minmax(0, 1fr); }
+    .fixture-research-inner { padding: 14px 12px 24px; }
+    .research-probability-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Leagues & Fixture Research -->
+  <div id="view-leagues" class="view active">
+    <div class="match-center-shell">
+      <div class="sports-strip" id="sport-list"></div>
+      <div class="match-center-grid">
+        <aside class="match-center-panel">
+          <div class="match-panel-heading">
+            <div><i class="fa-solid fa-trophy" style="color:var(--accent);margin-right:7px"></i>Competitions</div>
+            <span>LIVE DATA</span>
+          </div>
+          <div class="match-panel-scroll" id="league-list"></div>
+        </aside>
+        <section class="match-center-panel">
+          <div class="match-panel-heading">
+            <div><i class="fa-regular fa-calendar" style="color:var(--info);margin-right:7px"></i>Matches</div>
+            <span id="fixture-list-count">0 EVENTS</span>
+          </div>
+          <div class="match-panel-scroll" id="fixture-list"></div>
+        </section>
+        <section class="match-center-panel detail-panel">
+          <div class="match-panel-heading">
+            <div><i class="fa-solid fa-chart-simple" style="color:var(--warning);margin-right:7px"></i>Match Detail</div>
+          </div>
+          <div class="match-panel-scroll fixture-research-surface" id="fixture-research">
+            <div class="fixture-research-inner" style="color:var(--muted);font-size:0.86rem">
+              Select a verified fixture to open its research.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px"></div>
+
+<script>
+/* ============================================
+   STATE & DATA
+   ============================================ */
+const state = { apiOnline: false, backtestLoading: false, live: {}, selectedSport: 'football', selectedLeague: 'epl', selectedFixture: null, fixtureRefreshAt: {}, fixtureDisplayLimit: {}, researchRefreshAt: {}, researchRequestId: 0 };
+const selectionIndicatorRules = [
+  ['#sport-list', '.sport-switch.active'],
+  ['.research-jumpbar', 'button.active'],
+];
+let selectionIndicatorFrame = 0;
+function refreshSelectionIndicators() {
+  selectionIndicatorFrame = 0;
+  selectionIndicatorRules.forEach(([containerSelector, activeSelector]) => {
+    document.querySelectorAll(containerSelector).forEach(container => {
+      const active = container.querySelector(activeSelector);
+      let indicator = Array.from(container.children).find(child => child.classList.contains('selection-indicator'));
+      if (!active) { indicator?.classList.remove('ready'); return; }
+      if (!indicator) {
+        indicator = document.createElement('span');
+        indicator.className = 'selection-indicator';
+        indicator.setAttribute('aria-hidden', 'true');
+        container.appendChild(indicator);
+      }
+      const hostRect = container.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      indicator.style.width = `${activeRect.width}px`;
+      indicator.style.transform = `translate3d(${activeRect.left - hostRect.left + container.scrollLeft}px, 0, 0)`;
+      indicator.classList.add('ready');
+    });
+  });
+}
+function scheduleSelectionIndicators() {
+  if (!selectionIndicatorFrame) selectionIndicatorFrame = requestAnimationFrame(refreshSelectionIndicators);
+}
+new MutationObserver(scheduleSelectionIndicators).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected', 'aria-pressed'] });
+window.addEventListener('resize', scheduleSelectionIndicators);
+document.addEventListener('scroll', scheduleSelectionIndicators, true);
+scheduleSelectionIndicators();
+let API_BASE = '';
+const LOCAL_API_BASES = ['http://127.0.0.1:8000', 'http://127.0.0.1:8015', 'http://127.0.0.1:8014'];
+const isLocalHost = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
+const API_CANDIDATES = window.location.protocol === 'file:'
+  ? LOCAL_API_BASES
+  : isLocalHost
+    ? ['', ...LOCAL_API_BASES.filter(base => base !== window.location.origin)]
+    : [''];
+
+async function apiFetch(path, options = {}) {
+  const bases = API_BASE ? [API_BASE, ...API_CANDIDATES.filter(base => base !== API_BASE)] : API_CANDIDATES;
+  let lastError;
+  for (const base of bases) {
+    const controller = new AbortController();
+    const timeoutMs = path.includes('/backtest/refresh')
+      ? 600000
+      : path === '/api/backtest'
+        ? 60000
+        : path.includes('/research/refresh')
+          ? 60000
+          : path.includes('/refresh')
+            ? 30000
+            : 15000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${base}${path}`, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`${path} returned ${res.status}`);
+      API_BASE = base;
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err;
+    }
+  }
+  throw lastError || new Error(`Could not reach ${path}`);
+}
+
+async function apiGet(path) {
+  const res = await apiFetch(path);
+  return res.json();
+}
+
+async function apiPost(path, payload) {
+  const res = await apiFetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const body = await res.json().catch(() => ({}));
+  return body;
+}
+
+let TEAMS = {
+  epl: [
+    { id: 'arsenal', name: 'Arsenal', elo: 1765 },
+    { id: 'man_city', name: 'Manchester City', elo: 1820 },
+    { id: 'liverpool', name: 'Liverpool', elo: 1790 },
+    { id: 'chelsea', name: 'Chelsea', elo: 1712 },
+    { id: 'man_utd', name: 'Manchester United', elo: 1690 },
+    { id: 'tottenham', name: 'Tottenham', elo: 1705 },
+    { id: 'newcastle', name: 'Newcastle', elo: 1730 },
+    { id: 'aston_villa', name: 'Aston Villa', elo: 1725 },
+    { id: 'brighton', name: 'Brighton', elo: 1680 },
+    { id: 'west_ham', name: 'West Ham', elo: 1665 },
+    { id: 'bournemouth', name: 'Bournemouth', elo: 1640 },
+    { id: 'fulham', name: 'Fulham', elo: 1655 },
+    { id: 'crystal_palace', name: 'Crystal Palace', elo: 1645 },
+    { id: 'wolves', name: 'Wolves', elo: 1630 },
+    { id: 'nottingham', name: 'Nottingham Forest', elo: 1648 },
+    { id: 'everton', name: 'Everton', elo: 1620 },
+    { id: 'brentford', name: 'Brentford', elo: 1658 },
+    { id: 'ipswich', name: 'Ipswich Town', elo: 1580 },
+    { id: 'leicester', name: 'Leicester City', elo: 1610 },
+    { id: 'southampton', name: 'Southampton', elo: 1570 },
+  ],
+  laliga: [
+    { id: 'real_madrid', name: 'Real Madrid', elo: 1840 },
+    { id: 'barcelona', name: 'Barcelona', elo: 1810 },
+    { id: 'atletico', name: 'Atletico Madrid', elo: 1755 },
+    { id: 'real_sociedad', name: 'Real Sociedad', elo: 1700 },
+    { id: 'athletic', name: 'Athletic Bilbao', elo: 1695 },
+    { id: 'villarreal', name: 'Villarreal', elo: 1685 },
+    { id: 'betis', name: 'Real Betis', elo: 1670 },
+    { id: 'sevilla', name: 'Sevilla', elo: 1660 },
+  ],
+  bundesliga: [
+    { id: 'bayern', name: 'Bayern Munich', elo: 1835 },
+    { id: 'dortmund', name: 'Borussia Dortmund', elo: 1745 },
+    { id: 'leverkusen', name: 'Bayer Leverkusen', elo: 1780 },
+    { id: 'rb_leipzig', name: 'RB Leipzig', elo: 1720 },
+    { id: 'stuttgart', name: 'VfB Stuttgart', elo: 1690 },
+    { id: 'frankfurt', name: 'Eintracht Frankfurt', elo: 1680 },
+  ],
+  seriea: [
+    { id: 'inter', name: 'Inter Milan', elo: 1795 },
+    { id: 'ac_milan', name: 'AC Milan', elo: 1735 },
+    { id: 'juventus', name: 'Juventus', elo: 1750 },
+    { id: 'napoli', name: 'Napoli', elo: 1740 },
+    { id: 'roma', name: 'AS Roma', elo: 1690 },
+    { id: 'lazio', name: 'Lazio', elo: 1685 },
+  ],
+  ligue1: [
+    { id: 'psg', name: 'Paris Saint-Germain', elo: 1825 },
+    { id: 'marseille', name: 'Olympique Marseille', elo: 1695 },
+    { id: 'monaco', name: 'AS Monaco', elo: 1710 },
+    { id: 'lyon', name: 'Olympique Lyon', elo: 1680 },
+    { id: 'lille', name: 'Lille', elo: 1690 },
+  ]
+};
+
+async function loadLiveData() {
+  const health = await apiGet('/api/health');
+  state.apiOnline = true;
+  state.live.health = health;
+  state.live.sources = health.sources || [];
+  const results = await Promise.allSettled([
+    apiGet('/api/leagues'),
+    apiGet('/api/sports')
+  ]);
+  const [leagues, sports] = results;
+  if (leagues.status === 'fulfilled') state.live.leagues = leagues.value;
+  if (sports.status === 'fulfilled') state.live.sports = sports.value;
+  if (!state.backtestLoading) {
+    state.backtestLoading = true;
+    apiGet('/api/backtest')
+      .then(backtest => {
+        state.live.backtest = backtest;
+      })
+      .catch(err => console.warn('League validation data is unavailable:', err))
+      .finally(() => { state.backtestLoading = false; });
+  }
+}
+
+async function bootApp() {
+  try {
+    await loadLiveData();
+    showToast('Connected to local probability engine', 'success');
+  } catch (err) {
+    state.apiOnline = false;
+    console.warn('Using static frontend fallback:', err);
+    showToast('Running static fallback. Start engine_server.py for live flow.', 'warn');
+  }
+  await initLeagues();
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const colors = { info: 'var(--info)', success: 'var(--accent)', error: 'var(--danger)', warn: 'var(--warning)' };
+  toast.style.cssText = `background:var(--card);border:1px solid ${colors[type] || colors.info};border-radius:10px;padding:12px 20px;font-size:0.85rem;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:fadeUp 0.3s ease;max-width:360px`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+/* ============================================
+   LEAGUES & FIXTURE RESEARCH
+   ============================================ */
+function formatFixtureKickoff(value) {
+  if (!value) return 'Kickoff unavailable';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function fixtureDayKey(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value || 'unknown') : date.toLocaleDateString('en-CA');
+}
+
+function fixtureDayLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function fixtureClock(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '--:--' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function fixtureShortDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function teamInitials(name) {
+  const parts = String(name || 'Team').trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
+  return (parts[0] || 'TM').slice(0, 2).toUpperCase();
+}
+
+function teamMark(team, large = false) {
+  const badge = team?.badge || team?.logo || team?.crest;
+  return `<span class="team-mark${large ? ' large' : ''}">
+    <span>${teamInitials(team?.name)}</span>
+    ${badge ? `<img src="${badge}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+  </span>`;
+}
+
+function sportIcon(sportId) {
+  return {
+    football: 'fa-futbol',
+    nba: 'fa-basketball',
+    nfl: 'fa-football',
+    mlb: 'fa-baseball',
+    nhl: 'fa-hockey-puck',
+  }[sportId] || 'fa-trophy';
+}
+
+function selectResearchTab(tabId, button) {
+  const surface = button.closest('.fixture-research-surface');
+  if (!surface) return;
+  surface.querySelectorAll('.research-jumpbar button').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-selected', String(active));
+    item.tabIndex = active ? 0 : -1;
+  });
+  surface.querySelectorAll('[data-research-panel]').forEach(panel => {
+    const active = panel.dataset.researchPanel === tabId;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+  });
+}
+
+function providerLabel(value) {
+  const labels = {
+    openligadb: 'OpenLigaDB',
+    thesportsdb: 'TheSportsDB',
+    espn: 'ESPN',
+    espn_standings: 'ESPN standings',
+    espn_team_schedules: 'ESPN schedules',
+    espn_active_roster: 'ESPN active roster',
+    openligadb_table: 'OpenLigaDB table',
+    openligadb_match_history: 'OpenLigaDB history',
+    thesportsdb_table: 'TheSportsDB table',
+    thesportsdb_event_lineup: 'TheSportsDB lineup',
+  };
+  if (value && String(value).includes('/')) return String(value).split('/').map(part => labels[part] || part).join(' + ');
+  return labels[value] || (value ? String(value).replaceAll('_', ' ') : 'Unavailable');
+}
+
+function marketHorizonsContent(horizons) {
+  if (!horizons?.markets?.length) return '<div style="color:var(--muted);font-size:0.82rem">Expanded market research unavailable.</div>';
+  const pctMarket = value => `${((value || 0) * 100).toFixed(1)}%`;
+  const projection = horizons.projection || {};
+  const sample = horizons.sample || {};
+  const teams = horizons.teams || { home: 'Home', away: 'Away' };
+  const scorelines = horizons.top_scorelines || [];
+  return `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:10px">
+      <div>
+        <div class="mono" style="font-size:1rem;color:var(--text);font-weight:700">${teams.home} ${projection.home?.toFixed?.(2) ?? projection.home} | ${teams.away} ${projection.away?.toFixed?.(2) ?? projection.away}</div>
+        <div style="color:var(--text2);font-size:0.78rem;margin-top:3px">Projected total ${projection.total?.toFixed?.(2) ?? projection.total} ${projection.unit || ''} | margin ${projection.margin > 0 ? '+' : ''}${projection.margin?.toFixed?.(2) ?? projection.margin}</div>
+      </div>
+      <div style="text-align:right;color:var(--muted);font-size:0.72rem;line-height:1.55">
+        ${sample.league_games || 0} pre-cutoff games<br>
+        team samples ${sample.home_team_games || 0}/${sample.away_team_games || 0}
+      </div>
+    </div>
+    <div class="market-horizon-grid">
+      ${horizons.markets.map(market => {
+        const validation = market.validation;
+        const qualified = market.lean?.action === 'qualified_prediction';
+        return `<div class="market-horizon-item">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:9px">
+            <div>
+              <div style="font-size:0.84rem;font-weight:600;color:var(--text)">${market.label}</div>
+              <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${market.line !== null && market.line !== undefined ? `line ${market.line}` : market.selections.length === 3 ? '3-way market' : 'binary market'}</div>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+              <span class="badge ${qualified ? 'badge-green' : 'badge-amber'}">${qualified ? 'QUALIFIED' : 'WITHHELD'}</span>
+            </div>
+          </div>
+          <div class="market-selection-grid">
+            ${market.selections.map(selection => `<div style="min-width:0;border-left:2px solid ${selection.key === market.lean.selection_key ? 'var(--warning)' : 'var(--border)'};padding-left:8px">
+              <div style="font-size:0.72rem;color:var(--text2);overflow-wrap:anywhere">${selection.label}</div>
+              <div class="mono" style="font-size:0.94rem;font-weight:700;color:${selection.key === market.lean.selection_key ? 'var(--warning)' : 'var(--text)'}">${pctMarket(selection.probability)}</div>
+              <div class="mono" style="font-size:0.66rem;color:var(--muted)">sports probability</div>
+            </div>`).join('')}
+          </div>
+          <div style="margin-top:9px;color:var(--text2);font-size:0.72rem">Lean: <span class="mono" style="color:var(--warning)">${market.lean.selection}</span> | ${market.lean.confidence}</div>
+          ${validation ? `<div style="margin-top:6px;color:var(--muted);font-size:0.68rem;line-height:1.5">Frozen gate ${(validation.confidence_threshold * 100).toFixed(1)}% | validation <span class="mono" style="color:${validation.validated ? 'var(--accent)' : 'var(--text2)'}">${validation.validation_accuracy.toFixed(2)}% (${validation.validation_predictions})</span> | ${!validation.validated ? 'did not pass' : validation.deployment_enabled ? 'active' : 'paused by forward monitoring'}</div>` : '<div style="margin-top:6px;color:var(--muted);font-size:0.68rem">No frozen validation gate is available.</div>'}
+          ${market.alternate_lines?.length ? `<div style="margin-top:6px;color:var(--muted);font-size:0.68rem">${market.alternate_lines.map(line => `O ${line.line}: ${pctMarket(line.over_probability)}`).join(' | ')}</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    ${scorelines.length ? `<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;color:var(--text2);font-size:0.74rem">Likely scores: ${scorelines.map(row => `<span class="mono" style="margin-right:10px">${row.score} ${pctMarket(row.probability)}</span>`).join('')}</div>` : ''}
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+      <span class="badge ${horizons.markets.some(market => market.lean?.action === 'qualified_prediction') ? 'badge-green' : 'badge-amber'}">${horizons.markets.some(market => market.lean?.action === 'qualified_prediction') ? 'QUALIFIED ANALYSIS AVAILABLE' : 'ANALYSIS WITHHELD'}</span>
+    </div>`;
+}
+
+function marketHorizonsSection(horizons) {
+  if (!horizons?.markets?.length) return '<div style="color:var(--muted);font-size:0.82rem">Expanded prediction analysis is unavailable for this fixture.</div>';
+  return `<div>
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-size:0.9rem;font-weight:600">Expanded ${horizons.sport_label || ''} Prediction Analysis</div>
+      <div style="color:var(--muted);font-size:0.7rem">latest feature ${horizons.latest_feature_game_utc ? formatFixtureKickoff(horizons.latest_feature_game_utc) : 'league baseline'}</div>
+    </div>
+    ${marketHorizonsContent(horizons)}
+  </div>`;
+}
+
+async function ensureLeagueCatalog() {
+  if (!(state.live.leagues || []).length) state.live.leagues = await apiGet('/api/leagues');
+  if (!Object.keys(state.live.sports || {}).length) state.live.sports = await apiGet('/api/sports');
+}
+
+async function initLeagues() {
+  try {
+    await ensureLeagueCatalog();
+  } catch (err) {
+    console.error('League catalog unavailable:', err);
+  }
+  const sportList = document.getElementById('sport-list');
+  const leagueList = document.getElementById('league-list');
+  const leagues = state.live.leagues || [];
+  const sports = Object.values(state.live.sports || {
+    football: { id: 'football', name: 'Football' },
+    nba: { id: 'nba', name: 'NBA' },
+    nfl: { id: 'nfl', name: 'NFL' },
+    mlb: { id: 'mlb', name: 'MLB' },
+    nhl: { id: 'nhl', name: 'NHL' },
+  });
+  sportList.innerHTML = sports.map(s => {
+    const fixtureCount = leagues.filter(league => league.sport === s.id).reduce((total, league) => total + (league.fixtures || 0), 0);
+    return `<button class="sport-switch ${s.id === state.selectedSport ? 'active' : ''}" data-sport-id="${s.id}" aria-pressed="${s.id === state.selectedSport}">
+      <i class="fa-solid ${sportIcon(s.id)}"></i>
+      <span>${s.name}</span>
+      <span class="sport-switch-count">${fixtureCount}</span>
+    </button>`;
+  }).join('');
+  sportList.querySelectorAll('[data-sport-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      state.selectedSport = btn.dataset.sportId;
+      const firstLeague = leagues.find(l => l.sport === state.selectedSport);
+      state.selectedLeague = firstLeague?.id || state.selectedLeague;
+      state.selectedFixture = null;
+      await initLeagues();
+    });
+  });
+  const visibleLeagues = leagues.filter(l => l.sport === state.selectedSport);
+  if (!visibleLeagues.find(l => l.id === state.selectedLeague)) state.selectedLeague = visibleLeagues[0]?.id || 'epl';
+  leagueList.innerHTML = visibleLeagues.map(l => `
+    <button class="competition-row ${l.id === state.selectedLeague ? 'active' : ''}" data-league-id="${l.id}" aria-pressed="${l.id === state.selectedLeague}">
+      <span class="competition-icon"><i class="fa-solid ${sportIcon(l.sport)}"></i></span>
+      <span style="min-width:0">
+        <span class="competition-name">${l.name}</span>
+        <span class="competition-meta">${l.country || 'International'} | ${providerLabel(l.fixture_source || l.provider)}<br>${l.recommendations || 0} analyses</span>
+      </span>
+      <span class="competition-count" title="${l.fixtures || 0} verified fixtures">${l.fixtures || 0}</span>
+    </button>
+  `).join('') || '<div style="padding:18px 14px;color:var(--muted);font-size:0.78rem;line-height:1.55">No supported competition is available for this sport.</div>';
+  leagueList.querySelectorAll('[data-league-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      state.selectedLeague = btn.dataset.leagueId;
+      state.selectedFixture = null;
+      await initLeagues();
+    });
+  });
+  await renderLeagueFixtures(state.selectedLeague);
+}
+
+function renderLeagueResearchOverview(leagueId) {
+  const research = document.getElementById('fixture-research');
+  const league = (state.live.leagues || []).find(row => row.id === leagueId) || { id: leagueId, name: leagueId };
+  const expanded = state.live.backtest?.expanded_markets || {};
+  const rows = (expanded.per_market || []).filter(row => row.competition === leagueId);
+  const sampleRow = rows[0];
+  const verifiedGames = sampleRow ? (sampleRow.training_games || 0) + (sampleRow.validation_games || 0) + (sampleRow.holdout_games || 0) : 0;
+  const active = rows.filter(row => row.deployment_enabled);
+  const paused = rows.filter(row => row.target_reached && !row.deployment_enabled);
+  const withheld = rows.filter(row => !row.target_reached);
+  research.innerHTML = `
+    <div class="fixture-research-inner">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:18px">
+      <div>
+        <div style="font-size:1.1rem;font-weight:700">${league.name}</div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-top:4px">${league.country || ''} | ${providerLabel(league.fixture_source || league.provider)}</div>
+      </div>
+      <span class="badge badge-amber">NO UPCOMING FIXTURE</span>
+    </div>
+    <div style="border:1px solid var(--border);background:var(--bg2);border-radius:8px;padding:13px 14px;margin-bottom:16px;color:var(--text2);font-size:0.82rem;line-height:1.6">
+      The provider has not published an upcoming verified fixture in the current schedule window. Historical league research remains available below; fixture-specific H2H, lineups, standings, and injuries appear when a verified event is published.
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px">
+      ${[['Historical Games', verifiedGames, 'var(--info)'], ['Active Types', active.length, 'var(--accent)'], ['Checked Types', rows.length, 'var(--text)']].map(([label, value, color]) => `<div style="background:var(--bg2);border-radius:8px;padding:12px"><div class="mono" style="font-size:1.15rem;font-weight:700;color:${color}">${value}</div><div style="color:var(--muted);font-size:0.7rem;margin-top:3px">${label}</div></div>`).join('')}
+    </div>
+    <div style="color:var(--muted);font-size:0.74rem;margin-bottom:8px">Prediction Type Status</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">
+      ${active.map(row => `<span class="badge badge-green">${row.market_label} ACTIVE</span>`).join('') || '<span class="badge badge-gray">No active type currently clears deployment gates</span>'}
+      ${paused.map(row => `<span class="badge badge-amber">${row.market_label} PAUSED</span>`).join('')}
+      ${withheld.slice(0, 4).map(row => `<span class="badge badge-gray">${row.market_label} WITHHELD</span>`).join('')}
+    </div>
+    <div style="color:var(--muted);font-size:0.72rem">Sports-only analysis | moneyline, odds, and trading factors excluded | no-lookahead ${expanded.leakage_audit?.passed ? 'passed' : 'not available'}</div>
+    </div>
+  `;
+}
+
+async function refreshOneLeague(leagueId, button) {
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>Checking Provider';
+  }
+  try {
+    const result = await apiPost(`/api/leagues/${leagueId}/refresh`, {});
+    state.fixtureRefreshAt[leagueId] = Date.now();
+    state.live.leagues = await apiGet('/api/leagues');
+    await renderLeagueFixtures(leagueId);
+    showToast(`${result.run.fixtures} verified ${leagueId.toUpperCase()} fixtures loaded`, result.run.status === 'failed' ? 'error' : 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Could not refresh this league schedule', 'error');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '<i class="fa-solid fa-rotate" style="margin-right:6px"></i>Check Schedule';
+    }
+  }
+}
+
+async function renderLeagueFixtures(leagueId) {
+  const fixtureList = document.getElementById('fixture-list');
+  const fixtureCount = document.getElementById('fixture-list-count');
+  const research = document.getElementById('fixture-research');
+  const requestLeague = leagueId;
+  fixtureCount.textContent = 'LOADING';
+  fixtureList.innerHTML = '<div style="padding:18px 14px;color:var(--muted);font-size:0.8rem"><i class="fa-solid fa-spinner fa-spin" style="margin-right:7px"></i>Checking live provider...</div>';
+  try {
+    const fixtures = await apiGet(`/api/leagues/${leagueId}/fixtures`);
+    if (state.selectedLeague !== requestLeague) return;
+    fixtureCount.textContent = `${fixtures.length} EVENTS`;
+    if (!fixtures.length) {
+      state.researchRequestId += 1;
+      fixtureList.innerHTML = `<div style="padding:18px 14px;color:var(--text2);font-size:0.8rem;line-height:1.6">
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px">No scheduled verified fixtures</div>
+        <div>The providers returned no upcoming event for this league. Off-season and unpublished schedules remain empty.</div>
+        <button class="btn-secondary" id="btn-refresh-empty-league" style="margin-top:12px"><i class="fa-solid fa-rotate" style="margin-right:6px"></i>Check Schedule</button>
+      </div>`;
+      renderLeagueResearchOverview(leagueId);
+      document.getElementById('btn-refresh-empty-league')?.addEventListener('click', event => refreshOneLeague(leagueId, event.currentTarget));
+    } else {
+      const displayLimit = state.fixtureDisplayLimit[leagueId] || 50;
+      const visibleFixtures = fixtures.slice(0, displayLimit);
+      if (!visibleFixtures.some(fixture => fixture.fixture_id === state.selectedFixture)) state.selectedFixture = visibleFixtures[0]?.fixture_id || null;
+      fixtureList.innerHTML = `<div class="fixture-list-summary">Showing ${visibleFixtures.length} of ${fixtures.length} verified matches</div>` + visibleFixtures.map((f, index) => {
+        const hasPrediction = Boolean(f.prediction_available && f.recommendation && f.probabilities);
+        const currentDay = fixtureDayKey(f.starts_at);
+        const previousDay = index ? fixtureDayKey(visibleFixtures[index - 1].starts_at) : null;
+        const dayHeader = currentDay !== previousDay
+          ? `<div class="fixture-day"><span>${fixtureDayLabel(f.starts_at)}</span><span class="mono">${fixtureShortDate(f.starts_at)}</span></div>`
+          : '';
+        return `${dayHeader}<button class="fixture-row ${hasPrediction ? 'has-analysis' : ''} ${f.fixture_id === state.selectedFixture ? 'active' : ''}" data-fixture-id="${f.fixture_id}" aria-pressed="${f.fixture_id === state.selectedFixture}">
+          <span class="fixture-time">${fixtureClock(f.starts_at)}<span>${f.status || 'Scheduled'}</span></span>
+          <span class="fixture-teams">
+            <span class="fixture-team">${teamMark(f.home_team)}<span class="fixture-team-name">${f.home_team.name}</span></span>
+            <span class="fixture-team">${teamMark(f.away_team)}<span class="fixture-team-name">${f.away_team.name}</span></span>
+          </span>
+          <span class="fixture-signal"><i class="fa-solid ${hasPrediction ? 'fa-chart-line' : 'fa-chevron-right'}"></i></span>
+          <span class="fixture-subline">
+            <i class="fa-solid fa-circle-check" style="color:var(--accent)"></i>
+            <span>${providerLabel(f.provider)}${f.round_name ? ` | ${f.round_name}` : ''}${hasPrediction ? ` | ${f.recommendation.selection} ${(f.recommendation.probability * 100).toFixed(1)}%` : ' | Research available'}</span>
+          </span>
+        </button>`;
+      }).join('') + (visibleFixtures.length < fixtures.length ? `<button class="btn-secondary" id="btn-more-fixtures" style="width:100%;margin-top:8px"><i class="fa-solid fa-chevron-down" style="margin-right:6px"></i>Show 50 More</button>` : '');
+      document.getElementById('btn-more-fixtures')?.addEventListener('click', async () => {
+        state.fixtureDisplayLimit[leagueId] = displayLimit + 50;
+        await renderLeagueFixtures(leagueId);
+      });
+    }
+    fixtureList.querySelectorAll('[data-fixture-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.selectedFixture = btn.dataset.fixtureId;
+        fixtureList.querySelectorAll('[data-fixture-id]').forEach(row => {
+          const active = row.dataset.fixtureId === state.selectedFixture;
+          row.classList.toggle('active', active);
+          row.setAttribute('aria-pressed', String(active));
+        });
+        renderFixtureResearch(btn.dataset.fixtureId);
+      });
+    });
+    if (state.selectedFixture) await renderFixtureResearch(state.selectedFixture);
+  } catch (err) {
+    if (state.selectedLeague !== requestLeague) return;
+    console.error(err);
+    fixtureCount.textContent = 'ERROR';
+    fixtureList.innerHTML = '<div style="padding:18px 14px;color:var(--danger);font-size:0.8rem">Could not load fixtures.</div>';
+  }
+}
+
+async function renderFixtureResearch(fixtureId) {
+  const requestId = ++state.researchRequestId;
+  const container = document.getElementById('fixture-research');
+  container.innerHTML = '<div class="fixture-research-inner" style="color:var(--muted);font-size:0.86rem"><i class="fa-solid fa-spinner fa-spin" style="margin-right:7px"></i>Refreshing verified research...</div>';
+  try {
+    const lastResearchRefresh = state.researchRefreshAt[fixtureId] || 0;
+    if (Date.now() - lastResearchRefresh > 6 * 60 * 60 * 1000) {
+      try {
+        await apiPost(`/api/fixtures/${fixtureId}/research/refresh`, { force: false });
+        if (requestId !== state.researchRequestId) return;
+        state.researchRefreshAt[fixtureId] = Date.now();
+      } catch (refreshError) {
+        console.warn('Research refresh failed; showing the latest cached result.', refreshError);
+      }
+    }
+    const data = await apiGet(`/api/fixtures/${fixtureId}/research`);
+    if (requestId !== state.researchRequestId) return;
+    const p = data.prediction;
+    const pctValue = value => ((value || 0) * 100).toFixed(1) + '%';
+    const adjusted = data.adjusted_final_score || { scores: p.probabilities, engines: [], selection: p.recommendation.selection, probability: p.recommendation.probability, confidence: p.recommendation.confidence };
+    const h2h = data.past_h2h || { summary: {}, matches: [] };
+    const standings = data.standings || { home: {}, away: {}, table: [], signal: {} };
+    const lineups = data.lineups || { home: { starters: [], doubtful: [] }, away: { starters: [], doubtful: [] } };
+    const injuries = data.injuries || { home: [], away: [], signal: {} };
+    const researchMeta = data.research_meta || {};
+    const horizons = data.market_horizons || p.market_horizons;
+    const standingValue = row => row?.points !== null && row?.points !== undefined
+      ? `${row.points} pts${row.record ? ` | ${row.record}` : ''}`
+      : row?.record || (row?.win_pct !== null && row?.win_pct !== undefined ? `${(row.win_pct * 100).toFixed(1)}%` : 'record unavailable');
+    const lineupPlayers = lineup => lineup?.is_confirmed ? (lineup.starters || []) : (lineup.players || []);
+    const lineupLabel = lineup => lineup?.is_confirmed ? 'Confirmed lineup' : lineup?.verified ? `Active roster${lineup.coverage?.status === 'partial' ? ' (partial)' : ''}` : 'Lineup unavailable';
+    const playerPhotoUrl = (player, lineup) => {
+      if (!player || typeof player === 'string') return null;
+      if (player.image) return player.image;
+      if (!String(lineup?.source || '').startsWith('espn') || !player.id) return null;
+      const sportPath = { football: 'soccer', nba: 'nba', nfl: 'nfl', mlb: 'mlb', nhl: 'nhl' }[state.selectedSport] || 'soccer';
+      return `https://a.espncdn.com/i/headshots/${sportPath}/players/full/${encodeURIComponent(player.id)}.png`;
+    };
+    const lineupPlayerRow = (player, lineup) => {
+      const row = typeof player === 'string' ? { name: player } : (player || {});
+      const name = row.name || 'Unnamed player';
+      const image = playerPhotoUrl(row, lineup);
+      const meta = [row.position, row.status && String(row.status).toLowerCase() !== 'active' ? row.status : null].filter(Boolean).join(' | ');
+      return `<div class="lineup-player-row">
+        <span class="lineup-player-photo">
+          <span>${teamInitials(name)}</span>
+          ${image ? `<img src="${image}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+        </span>
+        <span class="lineup-player-copy">
+          <span class="lineup-player-name">${name}</span>
+          <span class="lineup-player-meta">${meta || 'Player'}</span>
+        </span>
+        <span class="lineup-player-number">${row.number ? `#${row.number}` : ''}</span>
+      </div>`;
+    };
+    container.innerHTML = `
+      <div class="match-scoreboard">
+        <div class="scoreboard-meta">${data.fixture.league.name}${data.fixture.round_name ? ` | ${data.fixture.round_name}` : ''} | ${formatFixtureKickoff(data.fixture.starts_at)}</div>
+        <div class="scoreboard-teams">
+          <div class="scoreboard-team">
+            ${teamMark(data.fixture.home_team, true)}
+            <div class="scoreboard-team-name">${data.fixture.home_team.name}</div>
+          </div>
+          <div class="scoreboard-center">
+            <span>${fixtureShortDate(data.fixture.starts_at)}</span>
+            <strong>VS</strong>
+            <span>${fixtureClock(data.fixture.starts_at)}</span>
+          </div>
+          <div class="scoreboard-team">
+            ${teamMark(data.fixture.away_team, true)}
+            <div class="scoreboard-team-name">${data.fixture.away_team.name}</div>
+          </div>
+        </div>
+        <div class="scoreboard-source">
+          <span><i class="fa-solid fa-circle-check" style="color:var(--accent);margin-right:5px"></i>${providerLabel(data.fixture.provider)} event ${data.fixture.provider_event_id}</span>
+          <span>verified ${formatFixtureKickoff(data.fixture.verified_at)}</span>
+          <span>${researchMeta.observed_at ? `research ${formatFixtureKickoff(researchMeta.observed_at)}` : 'research pending'}</span>
+        </div>
+      </div>
+      <div class="research-jumpbar" role="tablist" aria-label="Research sections">
+        <button class="active" role="tab" aria-selected="true" aria-controls="research-overview" onclick="selectResearchTab('overview', this)">Overview</button>
+        <button role="tab" aria-selected="false" aria-controls="research-predictions" tabindex="-1" onclick="selectResearchTab('predictions', this)">Predictions</button>
+        <button role="tab" aria-selected="false" aria-controls="research-h2h" tabindex="-1" onclick="selectResearchTab('h2h', this)">H2H</button>
+        <button role="tab" aria-selected="false" aria-controls="research-standings" tabindex="-1" onclick="selectResearchTab('standings', this)">Standings</button>
+        <button role="tab" aria-selected="false" aria-controls="research-lineups" tabindex="-1" onclick="selectResearchTab('lineups', this)">Lineups</button>
+        <button role="tab" aria-selected="false" aria-controls="research-injuries" tabindex="-1" onclick="selectResearchTab('injuries', this)">Injuries</button>
+      </div>
+      <div class="fixture-research-inner">
+      <div id="research-overview" class="research-tab-panel active research-probability-grid" data-research-panel="overview" role="tabpanel">
+        ${[['Home', p.probabilities.home, 'var(--accent)'], ['Draw', p.probabilities.draw, 'var(--text2)'], ['Away', p.probabilities.away, 'var(--info)']].map(([label, value, color]) => `
+          <div style="background:var(--bg2);border-radius:8px;padding:12px;text-align:center">
+            <div style="color:var(--muted);font-size:0.72rem">${label}</div>
+            <div class="mono" style="color:${color};font-weight:700;font-size:1.2rem">${(value*100).toFixed(1)}%</div>
+          </div>`).join('')}
+      </div>
+      <div class="research-tab-panel active" data-research-panel="overview" style="border:1px solid var(--accent);background:rgba(0,230,118,0.06);border-radius:10px;padding:13px 14px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+          <div>
+            <div style="color:var(--muted);font-size:0.75rem;margin-bottom:4px">Adjusted Final Score</div>
+            <div class="mono" style="font-size:1rem;color:var(--accent);font-weight:700">${adjusted.selection} ${pctValue(adjusted.probability || adjusted.scores[p.recommendation.selection_key])}</div>
+            <div style="color:var(--text2);font-size:0.78rem;margin-top:4px">${adjusted.confidence} confidence</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${[['Home', adjusted.scores.home, 'var(--accent)'], ['Draw', adjusted.scores.draw, 'var(--text2)'], ['Away', adjusted.scores.away, 'var(--info)']].map(([label, value, color]) => `
+              <div style="min-width:72px;background:var(--bg2);border-radius:8px;padding:8px 10px;text-align:center">
+                <div style="color:var(--muted);font-size:0.7rem">${label}</div>
+                <div class="mono" style="color:${color};font-weight:700">${pctValue(value)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      <div id="research-predictions" class="research-tab-panel" data-research-panel="predictions" role="tabpanel" hidden>
+        ${marketHorizonsSection(horizons)}
+      </div>
+      <div>
+        <div id="research-h2h" class="research-tab-panel" data-research-panel="h2h" role="tabpanel" hidden style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:0.75rem;margin-bottom:8px"><span>Past H2H</span><span>${providerLabel(h2h.source)}</span></div>
+          ${h2h.verified ? `<div class="mono" style="font-size:0.82rem;color:var(--text2);line-height:1.7">Home ${h2h.summary.home_wins} | Draw ${h2h.summary.draws} | Away ${h2h.summary.away_wins}</div>
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">${h2h.matches.slice(0, 5).map(m => `<div style="color:var(--muted);font-size:0.74rem">${m.date} | ${m.home_team} ${m.score} ${m.away_team}</div>`).join('')}</div>`
+            : `<div style="color:var(--muted);font-size:0.78rem">No completed meetings found in ${h2h.coverage?.seasons_checked?.length || 0} checked seasons.</div>`}
+        </div>
+        <div id="research-standings" class="research-tab-panel" data-research-panel="standings" role="tabpanel" hidden style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:0.75rem;margin-bottom:8px"><span>Standings in League</span><span>${providerLabel(standings.source)}${standings.season ? ` | ${standings.season_context === 'latest_completed' ? 'latest completed ' : ''}${standings.season}` : ''}${standings.verified && standings.model_eligible === false ? ' | no games played' : ''}</span></div>
+          ${standings.verified ? `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;color:var(--text2);font-size:0.8rem">
+            <span>${standings.home.team || data.fixture.home_team.name}</span><span class="mono">#${standings.home.rank} | ${standingValue(standings.home)}</span>
+            <span>${standings.away.team || data.fixture.away_team.name}</span><span class="mono">#${standings.away.rank} | ${standingValue(standings.away)}</span>
+          </div>` : '<div style="color:var(--muted);font-size:0.78rem">Verified standings unavailable.</div>'}
+        </div>
+        <div id="research-lineups" class="research-tab-panel" data-research-panel="lineups" role="tabpanel" hidden style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="color:var(--muted);font-size:0.75rem;margin-bottom:8px">Lineups</div>
+          <div class="lineup-rosters">
+            ${[['Home', lineups.home], ['Away', lineups.away]].map(([label, lineup]) => `<div>
+              <div style="color:var(--text2);font-size:0.78rem;margin-bottom:7px">${lineup.team || label} | ${lineupLabel(lineup)}</div>
+              <div class="lineup-player-list">${lineupPlayers(lineup).length ? lineupPlayers(lineup).slice(0, lineup?.is_confirmed ? 11 : 12).map(player => lineupPlayerRow(player, lineup)).join('') : '<div style="color:var(--muted);font-size:0.72rem;padding:8px 0">No verified players published</div>'}</div>
+              ${lineup?.source ? `<div style="color:var(--muted);font-size:0.68rem;margin-top:5px">${providerLabel(lineup.source)}</div>` : ''}
+              ${(lineup.doubtful || []).length ? `<div style="color:var(--warning);font-size:0.72rem;margin-top:5px">${lineup.doubtful.length} doubtful</div>` : ''}
+            </div>`).join('')}
+          </div>
+        </div>
+        <div id="research-injuries" class="research-tab-panel" data-research-panel="injuries" role="tabpanel" hidden style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:0.75rem;margin-bottom:8px"><span>Player Injury</span><span>${providerLabel(injuries.source)}</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${[...injuries.home.map(i => ({...i, side:'H'})), ...injuries.away.map(i => ({...i, side:'A'}))].slice(0, 8).map(i => `<div style="display:flex;justify-content:space-between;gap:8px;color:var(--text2);font-size:0.76rem"><span>${i.side} ${i.player}${i.detail ? `<span style="display:block;color:var(--muted);font-size:0.68rem;margin-top:2px">${i.detail}${i.return_date ? ` | return ${i.return_date}` : ''}</span>` : ''}</span><span class="mono" style="color:var(--warning);white-space:nowrap">${i.status} ${(i.impact*100).toFixed(1)}%</span></div>`).join('') || (injuries.verified ? '<div style="color:var(--text2);font-size:0.78rem"><i class="fa-solid fa-circle-check" style="color:var(--accent);margin-right:5px"></i>No injuries listed on the verified active rosters.</div>' : '<div style="color:var(--muted);font-size:0.78rem">Verified player injury data unavailable.</div>')}
+          </div>
+        </div>
+      </div>
+      </div>
+    `;
+  } catch (err) {
+    if (requestId !== state.researchRequestId) return;
+    console.error(err);
+    container.innerHTML = '<div class="fixture-research-inner" style="color:var(--danger);font-size:0.86rem">Could not load fixture research.</div>';
+  }
+}
+
+/* ============================================
+   PREDICTION ENGINE
+   ============================================ */
+async function populatePredictionFixtures() {
+  const compSel = document.getElementById('pred-comp');
+  const fixtureSel = document.getElementById('pred-fixture');
+  const meta = document.getElementById('pred-fixture-meta');
+  const btn = document.getElementById('btn-predict');
+  fixtureSel.innerHTML = '<option value="">Loading verified fixtures...</option>';
+  fixtureSel.disabled = true;
+  btn.disabled = true;
+  if (!state.apiOnline) {
+    fixtureSel.innerHTML = '<option value="">Live engine unavailable</option>';
+    meta.textContent = 'Connect the local engine to load provider-verified fixtures.';
+    return;
+  }
+  try {
+    const fixtures = await apiGet(`/api/leagues/${encodeURIComponent(compSel.value)}/fixtures`);
+    state.live.predictionFixtures = Array.isArray(fixtures) ? fixtures : [];
+    fixtureSel.innerHTML = state.live.predictionFixtures.map(fixture =>
+      `<option value="${fixture.fixture_id}">${fixture.home_name || fixture.home_team?.name || 'Home'} vs ${fixture.away_name || fixture.away_team?.name || 'Away'} - ${formatFixtureKickoff(fixture.starts_at)}</option>`
+    ).join('') || '<option value="">No verified upcoming fixtures</option>';
+    fixtureSel.disabled = !state.live.predictionFixtures.length;
+    btn.disabled = !state.live.predictionFixtures.length;
+    renderPredictionFixtureMeta();
+  } catch (err) {
+    console.error(err);
+    state.live.predictionFixtures = [];
+    fixtureSel.innerHTML = '<option value="">Could not load verified fixtures</option>';
+    meta.textContent = 'Fixture data is temporarily unavailable.';
+  }
+}
+
+function renderPredictionFixtureMeta() {
+  const fixtureId = document.getElementById('pred-fixture').value;
+  const fixture = (state.live.predictionFixtures || []).find(row => row.fixture_id === fixtureId);
+  const meta = document.getElementById('pred-fixture-meta');
+  meta.textContent = fixture
+    ? `${providerLabel(fixture.provider)} | ${formatFixtureKickoff(fixture.starts_at)} | real-time analysis on generation`
+    : 'Choose a provider-verified fixture.';
+}
+
+document.getElementById('pred-comp')?.addEventListener('change', populatePredictionFixtures);
+document.getElementById('pred-fixture')?.addEventListener('change', renderPredictionFixtureMeta);
+
+async function renderPredictionStages(stages, resultsDiv) {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:flex;flex-direction:column;gap:16px';
+  resultsDiv.appendChild(wrapper);
+
+  for (let i = 0; i < stages.length; i++) {
+    const s = stages[i];
+    const card = document.createElement('div');
+    card.className = 'step-reveal';
+    card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;border-left:3px solid ' + s.color;
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <i class="fa-solid ${s.icon}" style="color:${s.color};font-size:0.95rem"></i>
+        <span style="font-weight:600;font-size:0.95rem">${s.title}</span>
+        <span class="mono" style="color:var(--muted);font-size:0.75rem;margin-left:auto">Step ${i + 1}/${stages.length}</span>
+      </div>
+      ${s.content}
+    `;
+    wrapper.appendChild(card);
+    await new Promise(r => setTimeout(r, 250));
+    card.classList.add('visible');
+  }
+}
+
+function stagesFromServerPrediction(p) {
+  const pct = v => (v * 100).toFixed(1) + '%';
+  const recommendationColor = 'var(--accent)';
+  return [
+    { title: 'Baseline', icon: 'fa-chart-bar', color: 'var(--info)', content: `<div><div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Elo-based Prior</div><div class="mono" style="font-size:0.9rem;line-height:1.8">Home: <span style="color:var(--accent)">${pct(p.market_baseline.home)}</span><br>Draw: ${pct(p.market_baseline.draw)}<br>Away: ${pct(p.market_baseline.away)}</div></div>` },
+    { title: 'Elo Rating Model', icon: 'fa-ranking-star', color: '#ce93d8', content: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div><div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Team Ratings</div><div class="mono" style="font-size:0.9rem;line-height:1.8">${p.home_team.name}: <span style="color:var(--accent)">${p.home_team.elo}</span><br>${p.away_team.name}: <span style="color:var(--info)">${p.away_team.elo}</span><br>Elo Diff (+HA): ${p.elo.diff > 0 ? '+' : ''}${p.elo.diff}</div></div>
+      <div><div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Home Win Signal</div><div class="mono" style="font-size:0.9rem;line-height:1.8">Home: ${pct(p.elo.home_probability)}<br>Away: ${pct(1 - p.elo.home_probability)}</div></div>
+    </div>` },
+    { title: 'Dixon-Coles Score Model', icon: 'fa-table-cells', color: 'var(--warning)', content: `<div class="mono" style="font-size:0.9rem;line-height:1.8">Home: <span style="color:var(--accent)">${pct(p.dixon_coles.home)}</span><br>Draw: ${pct(p.dixon_coles.draw)}<br>Away: ${pct(p.dixon_coles.away)}</div>` },
+    { title: 'Calibrated Sports Analysis', icon: 'fa-bullseye', color: 'var(--accent)', content: `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+      ${[['Home', p.probabilities.home, 'var(--accent)'], ['Draw', p.probabilities.draw, 'var(--text2)'], ['Away', p.probabilities.away, 'var(--info)']].map(([label, probability, col]) => `<div style="text-align:center;padding:16px;background:var(--bg2);border-radius:8px"><div style="color:var(--muted);font-size:0.78rem;margin-bottom:6px">${label}</div><div class="mono" style="font-size:1.8rem;font-weight:700;color:${col}">${pct(probability)}</div></div>`).join('')}
+    </div><div style="padding:14px 16px;background:var(--bg2);border:1px solid ${recommendationColor};border-radius:10px">
+      <div><span style="color:var(--muted)">Recommendation:</span> <span class="mono" style="font-weight:700;color:${recommendationColor}">${p.recommendation.selection}</span> <span style="color:var(--text2)">(${pct(p.recommendation.probability)}, ${p.recommendation.confidence} confidence)</span></div>
+    </div>` },
+    { title: `Expanded ${p.market_horizons?.sport_label || 'Sport'} Predictions`, icon: 'fa-chart-column', color: 'var(--warning)', content: marketHorizonsContent(p.market_horizons) }
+  ];
+}
+
+document.getElementById('btn-predict')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-predict');
+  const fixtureId = document.getElementById('pred-fixture').value;
+  const resultsDiv = document.getElementById('predict-results');
+
+  if (!fixtureId) { showToast('Choose a verified fixture first', 'warn'); return; }
+  if (!state.apiOnline) { showToast('Real-time analysis requires the live engine', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i> Analyzing live data...';
+  resultsDiv.innerHTML = '';
+
+  try {
+    const prediction = await apiPost('/api/predict', { fixture_id: fixtureId });
+    await renderPredictionStages(stagesFromServerPrediction(prediction), resultsDiv);
+    showToast('Real-time fixture analysis generated', 'success');
+  } catch (err) {
+    console.error('Real-time prediction failed:', err);
+    resultsDiv.innerHTML = '<div style="background:var(--card);border:1px solid var(--danger);border-radius:8px;padding:24px;color:var(--text2)">Real-time analysis could not be generated. Refresh the live data and try again.</div>';
+    showToast('Real-time prediction failed', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-play" style="margin-right:6px"></i> Generate Prediction';
+  }
+  return;
+
+  // Run the simulated pipeline in stages
+  const stages = [];
+  // Stage 1: Market Baseline
+  const homeOdds = 2.0 + (1820 - homeTeam.elo) * 0.004 + (Math.random() - 0.5) * 0.2;
+  const drawOdds = 3.2 + (Math.random() - 0.5) * 0.3;
+  const awayOdds = 2.0 + (1820 - awayTeam.elo) * 0.004 + (Math.random() - 0.5) * 0.2;
+  const overround = 1 / homeOdds + 1 / drawOdds + 1 / awayOdds;
+  const fairH = (1 / homeOdds) / overround;
+  const fairD = (1 / drawOdds) / overround;
+  const fairA = (1 / awayOdds) / overround;
+  stages.push({ title: 'Market Baseline', icon: 'fa-chart-bar', color: 'var(--info)',
+    content: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Raw Odds</div>
+        <div class="mono" style="font-size:0.9rem;line-height:1.8">Home: ${homeOdds.toFixed(2)}<br>Draw: ${drawOdds.toFixed(2)}<br>Away: ${awayOdds.toFixed(2)}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Fair Probabilities (overround removed)</div>
+        <div class="mono" style="font-size:0.9rem;line-height:1.8">Home: <span style="color:var(--accent)">${(fairH*100).toFixed(1)}%</span><br>Draw: ${(fairD*100).toFixed(1)}%<br>Away: ${(fairA*100).toFixed(1)}%</div>
+        <div style="color:var(--muted);font-size:0.75rem;margin-top:4px">Overround: ${((overround - 1) * 100).toFixed(1)}% | Sum: ${(fairH + fairD + fairA).toFixed(6)}</div>
+      </div>
+    </div>`
+  });
+
+  // Stage 2: Elo
+  const eloDiff = homeTeam.elo - awayTeam.elo + 65; // home advantage
+  const eloHomeProb = 1 / (1 + Math.pow(10, -eloDiff / 400));
+  stages.push({ title: 'Elo Rating Model', icon: 'fa-ranking-star', color: '#ce93d8',
+    content: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Team Ratings</div>
+        <div class="mono" style="font-size:0.9rem;line-height:1.8">${homeTeam.name}: <span style="color:var(--accent)">${homeTeam.elo}</span><br>${awayTeam.name}: <span style="color:var(--info)">${awayTeam.elo}</span><br>Elo Diff (+HA): ${eloDiff > 0 ? '+' : ''}${eloDiff}</div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Elo-Implied Probability</div>
+        <div class="mono" style="font-size:0.9rem;line-height:1.8">Home: ${(eloHomeProb * 100).toFixed(1)}%<br>Away: ${((1 - eloHomeProb) * 100).toFixed(1)}%</div>
+      </div>
+    </div>`
+  });
+
+  // Stage 3: Dixon-Coles
+  const dcHomeWin = Math.max(0.1, Math.min(0.8, eloHomeProb * 0.92 + (Math.random() - 0.5) * 0.04));
+  const dcDraw = Math.max(0.15, Math.min(0.35, 0.26 + (Math.random() - 0.5) * 0.06));
+  const dcAwayWin = Math.max(0.1, 1 - dcHomeWin - dcDraw);
+  const dcSum = dcHomeWin + dcDraw + dcAwayWin;
+  stages.push({ title: 'Dixon-Coles Score Model', icon: 'fa-table-cells', color: 'var(--warning)',
+    content: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Scoreline Probability Matrix (excerpt)</div>
+        <table style="font-size:0.78rem;border-collapse:collapse" class="mono">
+          <tr><td style="color:var(--muted);padding:2px 8px"></td><td style="color:var(--muted);padding:2px 8px">0</td><td style="color:var(--muted);padding:2px 8px">1</td><td style="color:var(--muted);padding:2px 8px">2</td></tr>
+          ${[0,1,2].map(h => `<tr><td style="color:var(--muted);padding:2px 8px">${h}</td>${[0,1,2].map(a => {
+            let p = 0; if (h > a) p = dcHomeWin/5; else if (h === a) p = dcDraw/3; else p = dcAwayWin/5;
+            p = Math.max(0.01, p + (Math.random()-0.5)*0.02);
+            return `<td style="padding:2px 8px;color:var(--text2)">${(p*100).toFixed(1)}%</td>`;
+          }).join('')}</tr>`).join('')}
+        </table>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Aggregated Outcome Probabilities</div>
+        <div class="mono" style="font-size:0.9rem;line-height:1.8">Home: <span style="color:var(--accent)">${(dcHomeWin/dcSum*100).toFixed(1)}%</span><br>Draw: ${(dcDraw/dcSum*100).toFixed(1)}%<br>Away: ${(dcAwayWin/dcSum*100).toFixed(1)}%</div>
+      </div>
+    </div>`
+  });
+
+  // Stage 4: Availability
+  const missing = Math.floor(Math.random() * 3);
+  const gkMissing = Math.random() < 0.15 ? 1 : 0;
+  const replacementGap = missing * 0.06 + gkMissing * 0.08 + Math.random() * 0.04;
+  const availConf = snapshot === 'T-5m' || snapshot === 'T-15m' ? 1.0 : snapshot === 'T-60m' ? 0.8 : 0.3;
+  stages.push({ title: 'Line-up & Injury Engine', icon: 'fa-user-injured', color: 'var(--danger)',
+    content: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Availability Features</div>
+        <div class="mono" style="font-size:0.85rem;line-height:2">
+          starters_missing: <span style="color:${missing > 0 ? 'var(--warning)' : 'var(--accent)'}">${missing}</span><br>
+          goalkeeper_missing: <span style="color:${gkMissing ? 'var(--danger)' : 'var(--accent)'}">${gkMissing}</span><br>
+          replacement_gap: ${replacementGap.toFixed(3)}<br>
+          availability_confidence: ${availConf.toFixed(2)}
+        </div>
+      </div>
+      <div>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:8px">Snapshot Context</div>
+        <div class="mono" style="font-size:0.85rem;line-height:2">
+          snapshot: ${snapshot}<br>
+          source_freshness: ${availConf > 0.9 ? '<12min' : availConf > 0.5 ? '~1h' : '>24h'}<br>
+          lineup_type: ${availConf > 0.9 ? 'official' : availConf > 0.5 ? 'predicted' : 'heuristic'}
+        </div>
+      </div>
+    </div>`
+  });
+
+  // Stage 5: Ensemble
+  const wMarket = 0.45, wDC = 0.30, wElo = 0.15, wAvail = 0.10;
+  let ensH = fairH * wMarket + (dcHomeWin/dcSum) * wDC + eloHomeProb * wElo - replacementGap * wAvail;
+  let ensD = fairD * wMarket + (dcDraw/dcSum) * wDC + 0.0;
+  let ensA = fairA * wMarket + (dcAwayWin/dcSum) * wDC + (1 - eloHomeProb) * wElo + replacementGap * wAvail;
+  const ensSum = ensH + ensD + ensA;
+  ensH /= ensSum; ensD /= ensSum; ensA /= ensSum;
+  // Stage 6: Calibration
+  const calH = ensH + (Math.random() - 0.5) * 0.015;
+  const calD = ensD + (Math.random() - 0.5) * 0.008;
+  const calA = 1 - calH - calD;
+  const edgeH = calH - fairH;
+  const edgeD = calD - fairD;
+  const edgeA = calA - fairA;
+  stages.push({ title: 'Calibrated Output', icon: 'fa-bullseye', color: 'var(--accent)',
+    content: `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+        ${[['Home', calH, fairH, edgeH, 'var(--accent)'], ['Draw', calD, fairD, edgeD, 'var(--text2)'], ['Away', calA, fairA, edgeA, 'var(--info)']].map(([label, cal, mkt, edge, col]) => `
+          <div style="text-align:center;padding:16px;background:var(--bg2);border-radius:10px">
+            <div style="color:var(--muted);font-size:0.78rem;margin-bottom:6px">${label}</div>
+            <div class="mono" style="font-size:1.8rem;font-weight:700;color:${col}">${(cal*100).toFixed(1)}%</div>
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:4px">Market: ${(mkt*100).toFixed(1)}%</div>
+            <div style="font-size:0.78rem;margin-top:2px;color:${edge > 0 ? 'var(--accent)' : 'var(--danger)'}">Edge: ${edge > 0 ? '+' : ''}${(edge*100).toFixed(1)}pp</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.82rem">
+        <div style="padding:10px 14px;background:var(--bg2);border-radius:8px"><span style="color:var(--muted)">Model:</span> <span class="mono">lgbm_outcome_v1_calibrated</span></div>
+        <div style="padding:10px 14px;background:var(--bg2);border-radius:8px"><span style="color:var(--muted)">ECE:</span> <span class="mono">0.028</span></div>
+        <div style="padding:10px 14px;background:var(--bg2);border-radius:8px"><span style="color:var(--muted)">Snapshot:</span> <span class="mono">${snapshot}</span></div>
+        <div style="padding:10px 14px;background:var(--bg2);border-radius:8px"><span style="color:var(--muted)">Prob Sum:</span> <span class="mono">${(calH+calD+calA).toFixed(6)}</span></div>
+      </div>`
+  });
+
+  await renderPredictionStages(stages, resultsDiv);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-play" style="margin-right:6px"></i> Generate Prediction';
+  showToast('Prediction generated successfully', 'success');
+});
+
+/* ============================================
+   BACKTEST
+   ============================================ */
+function initBacktest() {
+  const backtest = state.live.backtest || {};
+  const expanded = backtest.expanded_markets || {};
+  const marketSummary = expanded.summary || {};
+  const marketAudit = expanded.leakage_audit;
+  const marketTarget = expanded.target;
+  const deploymentTarget = expanded.deployment_target;
+  const winnerTarget = expanded.winner_target;
+  const hasExpandedReport = Boolean(marketAudit && expanded.summary);
+  const metrics = hasExpandedReport ? [
+    { label: 'Verified Games', value: String(marketSummary.verified_games ?? 0), color: 'var(--text)' },
+    { label: 'Evaluated Signals', value: String(marketSummary.evaluated_holdout_predictions ?? 0), color: 'var(--info)' },
+    { label: 'Final-Test Win Rate', value: `${(marketSummary.qualified_accuracy ?? 0).toFixed(2)}%`, color: marketTarget?.reached ? 'var(--accent)' : 'var(--warning)' },
+    { label: 'Final-Test Record', value: `${marketSummary.qualified_correct ?? 0}-${marketSummary.qualified_losses ?? 0}`, color: 'var(--text)' },
+    { label: 'Net Wins (Count)', value: `${(marketSummary.net_wins ?? 0) > 0 ? '+' : ''}${marketSummary.net_wins ?? 0}`, color: 'var(--accent)' },
+    { label: 'Coverage', value: `${(marketSummary.coverage ?? 0).toFixed(2)}%`, color: 'var(--text2)' },
+  ] : backtest.metrics || [
+    { label: 'Historical Games', value: '0', color: 'var(--text)' },
+    { label: 'Winner Accuracy', value: '0.0%', color: 'var(--warning)' },
+    { label: 'Correct Winners', value: '0/0', color: 'var(--text2)' },
+    { label: 'Avg Confidence', value: '0.0%', color: 'var(--info)' },
+    { label: 'Model Tested', value: 'waiting for results', color: 'var(--text2)' },
+  ];
+  document.getElementById('bt-metrics').innerHTML = metrics.map(m => `
+    <div class="metric-card" style="padding:16px 18px">
+      <div class="mono" style="font-size:1.3rem;font-weight:700;color:${m.color}">${m.value}</div>
+      <div class="metric-label">${m.label}</div>
+    </div>
+  `).join('');
+  const generatedAt = expanded.generated_at || backtest.generated_at;
+  const dataCutoff = expanded.data_cutoff || backtest.data_cutoff;
+  document.getElementById('bt-data-freshness').innerHTML = generatedAt
+    ? `<span class="badge badge-green" style="margin-right:7px">LATEST REPORT</span>generated ${formatFixtureKickoff(generatedAt)}${dataCutoff ? ` | data through ${formatFixtureKickoff(dataCutoff)}` : ''}`
+    : 'No generated report timestamp is available.';
+  const details = document.getElementById('bt-details');
+  const audit = backtest.leakage_audit;
+  const target = backtest.target;
+  const perLeague = backtest.per_league || [];
+  const byMarket = expanded.by_market || [];
+  const perMarket = expanded.per_market || [];
+  const sportLabels = { football: 'Football', nba: 'NBA', nfl: 'NFL', mlb: 'MLB', nhl: 'NHL' };
+  const bySportMarket = (() => {
+    const acc = new Map();
+    perMarket.forEach(r => {
+      const key = `${r.sport}|${r.market}`;
+      if (!acc.has(key)) acc.set(key, { sport: r.sport, market_label: r.market_label, evaluated_predictions: 0, qualified_predictions: 0, correct: 0, deployment_qualified: false });
+      const a = acc.get(key);
+      a.evaluated_predictions += r.all_predictions || 0;
+      a.qualified_predictions += r.qualified_predictions || 0;
+      a.correct += r.qualified_correct || 0;
+      a.deployment_qualified = a.deployment_qualified || !!r.deployment_enabled;
+    });
+    return [...acc.values()].map(a => ({
+      ...a,
+      accuracy: a.qualified_predictions ? (a.correct / a.qualified_predictions) * 100 : 0,
+      coverage: a.evaluated_predictions ? (a.qualified_predictions / a.evaluated_predictions) * 100 : 0,
+    })).sort((x, y) => x.sport.localeCompare(y.sport) || y.qualified_predictions - x.qualified_predictions || y.accuracy - x.accuracy);
+  })();
+  if (!audit) {
+    details.innerHTML = '<div style="border-top:1px solid var(--border);padding-top:16px;color:var(--muted);font-size:0.85rem">No frozen-prediction backtest has been recorded.</div>';
+    return;
+  }
+  details.innerHTML = `
+    <div style="font-size:0.9rem;font-weight:650;color:var(--text);margin-bottom:8px">Straight Winner Audit</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="badge ${audit.passed ? 'badge-green' : 'badge-red'}"><i class="fa-solid ${audit.passed ? 'fa-shield-check' : 'fa-triangle-exclamation'}" style="margin-right:5px"></i>Leakage audit ${audit.passed ? 'passed' : 'failed'}</span>
+      <span class="badge ${target?.reached ? 'badge-green' : 'badge-amber'}">${target?.accuracy || 90}% winner holdout target ${target?.reached ? 'reached' : 'not reached'}</span>
+      <span class="badge badge-blue">${backtest.mode || 'frozen predictions'}</span>
+    </div>
+    <div style="overflow-x:auto;border-top:1px solid var(--border)">
+      <table class="backtest-table" style="width:100%;min-width:980px;border-collapse:collapse;font-size:0.78rem">
+        <thead><tr style="color:var(--muted);text-align:left"><th style="padding:10px 8px">League</th><th>Data</th><th>Train</th><th>Holdout</th><th>All games</th><th>High confidence</th><th>Coverage</th><th>Frozen threshold</th><th>Tuned parameters</th><th>Cutoff</th></tr></thead>
+        <tbody>${perLeague.map(row => `<tr style="border-top:1px solid var(--border);color:var(--text2)">
+          <td style="padding:10px 8px;color:var(--text)">${(state.live.leagues || []).find(l => l.id === row.competition)?.name || row.competition}</td>
+          <td><span class="badge ${row.history_complete ? 'badge-green' : 'badge-amber'}">${row.history_complete ? 'complete' : 'partial'}</span></td>
+          <td class="mono">${row.training_games}</td><td class="mono">${row.holdout_games}</td>
+          <td class="mono">${row.all_game_accuracy}%</td><td class="mono" style="color:${row.target_reached ? 'var(--accent)' : 'var(--warning)'}">${row.selective_accuracy === null ? 'n/a' : row.selective_accuracy + '%'}</td>
+          <td class="mono">${row.coverage}%</td><td class="mono">${((row.parameters?.confidence_threshold || 0) * 100).toFixed(1)}%</td>
+          <td class="mono" style="white-space:nowrap">HA ${row.parameters?.home_advantage} | K ${row.parameters?.k_factor} | Elo ${row.parameters?.elo_scale} | Form ${row.parameters?.form_window} | Draw ${((row.parameters?.draw_base || 0) * 100).toFixed(0)}%</td>
+          <td class="mono">${row.training_cutoff?.slice(0, 10) || 'n/a'}</td>
+        </tr>`).join('') || '<tr><td colspan="10" style="padding:12px 8px;color:var(--muted)">No league has enough verified games yet.</td></tr>'}</tbody>
+      </table>
+    </div>
+    ${marketAudit ? `
+      <div style="border-top:1px solid var(--border);padding-top:22px;margin-top:24px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <div>
+            <h3 style="font-size:1rem;font-weight:650;color:var(--text)">Sports Prediction Final Test</h3>
+            <div style="font-size:0.76rem;color:var(--text2);margin-top:4px">Parameters are trained first, gates qualify on the next chronological block, and these results come only from the untouched final block.</div>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <span class="badge ${marketAudit.passed ? 'badge-green' : 'badge-red'}">NO LOOKAHEAD ${marketAudit.passed ? 'PASSED' : 'FAILED'}</span>
+            <span class="badge ${marketTarget?.reached ? 'badge-green' : 'badge-amber'}">${marketTarget?.accuracy || 80}% WIN + ${marketTarget?.minimum_coverage || 15}% COVERAGE ${marketTarget?.reached ? 'REACHED' : 'NOT REACHED'}</span>
+            ${deploymentTarget ? `<span class="badge ${deploymentTarget.reached ? 'badge-green' : 'badge-amber'}">DEPLOYMENT ${deploymentTarget.actual_accuracy.toFixed(2)}% | ${deploymentTarget.actual_coverage.toFixed(2)}%</span>` : ''}
+            <span class="badge badge-gray">PROFIT: NOT MEASURABLE WITHOUT PRICES</span>
+            ${winnerTarget ? `<span class="badge ${winnerTarget.reached ? 'badge-green' : 'badge-amber'}">MATCH WINNER ${winnerTarget.actual_accuracy.toFixed(2)}% WIN | ${winnerTarget.actual_coverage.toFixed(2)}% COVERAGE</span>` : ''}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+          ${[
+            ['Verified Games', marketSummary.verified_games ?? 0, 'var(--text)'],
+            ['Evaluated Signals', marketSummary.evaluated_holdout_predictions ?? 0, 'var(--info)'],
+            ['Final-Test Win Rate', `${(marketSummary.qualified_accuracy ?? 0).toFixed(2)}%`, marketTarget?.reached ? 'var(--accent)' : 'var(--warning)'],
+            ['Final-Test Record', `${marketSummary.qualified_correct ?? 0}-${marketSummary.qualified_losses ?? 0}`, 'var(--text)'],
+            ['Net Wins (Count)', `${(marketSummary.net_wins ?? 0) > 0 ? '+' : ''}${marketSummary.net_wins ?? 0}`, 'var(--accent)'],
+            ['Coverage', `${(marketSummary.coverage ?? 0).toFixed(2)}%`, 'var(--text2)'],
+          ].map(([label, value, color]) => `<div style="border:1px solid var(--border);border-radius:6px;padding:13px 14px;background:var(--card)"><div class="mono" style="font-size:1.05rem;font-weight:700;color:${color}">${value}</div><div class="metric-label">${label}</div></div>`).join('')}
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:18px">Win rate is sports-prediction accuracy. Net wins is correct minus incorrect predictions. Moneyline, odds, staking, and trading factors are excluded. All-signal accuracy: ${(marketSummary.all_accuracy ?? 0).toFixed(2)}%.</div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:7px">Results By Prediction Type</div>
+        <div style="overflow-x:auto;border-top:1px solid var(--border);margin-bottom:22px">
+          <table class="backtest-table" style="width:100%;border-collapse:collapse;font-size:0.76rem;min-width:720px">
+            <thead><tr style="color:var(--muted);text-align:left"><th style="padding:10px 8px">Sport</th><th>Prediction</th><th>Evaluated</th><th>Validation-qualified</th><th>Wins</th><th>Losses</th><th>Win rate</th><th>Coverage</th><th>Status</th></tr></thead>
+            <tbody>${bySportMarket.map(row => `<tr style="border-top:1px solid var(--border);color:var(--text2)">
+              <td style="padding:10px 8px;color:var(--text);font-weight:600">${sportLabels[row.sport] || row.sport}</td><td style="color:var(--text)">${row.market_label}</td><td class="mono">${row.evaluated_predictions}</td><td class="mono">${row.qualified_predictions}</td><td class="mono">${row.correct}</td><td class="mono">${row.qualified_predictions - row.correct}</td><td class="mono" style="color:${row.accuracy > 80 && row.qualified_predictions ? 'var(--accent)' : 'var(--text2)'}">${row.qualified_predictions ? row.accuracy.toFixed(2) + '%' : 'n/a'}</td><td class="mono">${row.coverage.toFixed(2)}%</td><td><span class="badge ${row.deployment_qualified ? 'badge-green' : row.qualified_predictions ? 'badge-amber' : 'badge-gray'}">${row.deployment_qualified ? 'ACTIVE' : row.qualified_predictions ? 'PAUSED' : 'WITHHELD'}</span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:7px">Frozen League Gates</div>
+        <div style="overflow-x:auto;border-top:1px solid var(--border)">
+          <table class="backtest-table" style="width:100%;border-collapse:collapse;font-size:0.74rem;min-width:980px">
+            <thead><tr style="color:var(--muted);text-align:left"><th style="padding:10px 8px">League</th><th>Prediction</th><th>Train</th><th>Frozen tuning</th><th>Gate</th><th>Validation</th><th>Final test</th><th>Win rate</th><th>Decision</th></tr></thead>
+            <tbody>${perMarket.map(row => {
+              const tuning = row.frozen_tuning || {};
+              const setting = tuning.parameters?.score_adjustment !== undefined ? `score ${tuning.parameters.score_adjustment > 0 ? '+' : ''}${tuning.parameters.score_adjustment}` : `margin x${tuning.parameters?.margin_scale ?? 1}`;
+              return `<tr style="border-top:1px solid var(--border);color:var(--text2)"><td style="padding:10px 8px;color:var(--text)">${(state.live.leagues || []).find(l => l.id === row.competition)?.name || row.competition}</td><td>${row.market_label}</td><td class="mono">${tuning.accuracy.toFixed(2)}% (${tuning.predictions})</td><td class="mono">${setting}</td><td class="mono">${(tuning.confidence_threshold * 100).toFixed(1)}%</td><td class="mono">${row.validation_accuracy.toFixed(2)}% (${row.validation_predictions})</td><td class="mono">${row.qualified_predictions}/${row.all_predictions}</td><td class="mono">${row.qualified_predictions ? row.qualified_accuracy.toFixed(2) + '%' : 'n/a'}</td><td><span class="badge ${row.deployment_enabled ? 'badge-green' : row.target_reached ? 'badge-amber' : 'badge-gray'}">${row.deployment_enabled ? 'ACTIVE' : row.target_reached ? 'PAUSED' : 'WITHHELD'}</span></td></tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>
+      </div>` : '<div style="border-top:1px solid var(--border);padding-top:18px;margin-top:22px;color:var(--muted);font-size:0.82rem">The all-market holdout has not been generated yet.</div>'}`;
+}
+
+let backtestRefreshInFlight = false;
+async function refreshBacktestView() {
+  if (!state.apiOnline || backtestRefreshInFlight) return;
+  backtestRefreshInFlight = true;
+  const freshness = document.getElementById('bt-data-freshness');
+  if (freshness) freshness.textContent = 'Checking the latest persisted report...';
+  try {
+    state.live.backtest = await apiGet('/api/backtest');
+    initBacktestCharts();
+  } catch (err) {
+    console.error(err);
+    if (freshness) freshness.textContent = 'Could not refresh the backtest report. Showing the last loaded result.';
+  } finally {
+    backtestRefreshInFlight = false;
+  }
+}
+
+function initBacktestCharts() {
+  state.chartsInitialized = true;
+  initBacktest();
+  ['chart-pnl', 'chart-clv', 'chart-monthly', 'chart-drawdown'].forEach(id => Chart.getChart(id)?.destroy());
+  const backtest = state.live.backtest || {};
+  const expanded = backtest.expanded_markets || {};
+  const deploymentMarkets = new Set(expanded.deployment_markets || []);
+  const games = (expanded.games || backtest.games || []).filter(game => !deploymentMarkets.size || deploymentMarkets.has(game.market));
+  const chartFont = { family: "'JetBrains Mono', monospace", size: 11 };
+  const gridColor = 'rgba(30,48,39,0.6)';
+  const tickColor = '#5e7268';
+
+  const accuracyData = expanded.series?.rolling_accuracy_100 || backtest.series?.accuracy || [];
+  new Chart(document.getElementById('chart-pnl'), {
+    type: 'line',
+    data: { labels: accuracyData.map((_, i) => i + 1), datasets: [{ data: accuracyData, borderColor: '#00e676', backgroundColor: 'rgba(0,230,118,0.08)', fill: true, borderWidth: 1.5, pointRadius: 0, tension: 0.3 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont, callback: v => v + '%' } } } }
+  });
+
+  const bands = ['<40%', '40-50%', '50-60%', '60-70%', '70%+'];
+  const bandCounts = bands.map((_, index) => games.filter(game => {
+    const c = (game.confidence || 0) * 100;
+    return index === 0 ? c < 40 : index === 1 ? c >= 40 && c < 50 : index === 2 ? c >= 50 && c < 60 : index === 3 ? c >= 60 && c < 70 : c >= 70;
+  }).length);
+  new Chart(document.getElementById('chart-clv'), {
+    type: 'bar',
+    data: { labels: bands, datasets: [{ data: bandCounts, backgroundColor: bands.map((_, i) => i >= 2 ? 'rgba(0,230,118,0.6)' : 'rgba(255,171,64,0.5)'), borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor, font: chartFont, maxRotation: 45 } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont } } } }
+  });
+
+  const outcomes = ['Correct', 'Incorrect'];
+  const outcomeCounts = [games.filter(game => game.correct).length, games.filter(game => !game.correct).length];
+  new Chart(document.getElementById('chart-monthly'), {
+    type: 'bar',
+    data: { labels: outcomes, datasets: [{ data: outcomeCounts, backgroundColor: ['rgba(0,230,118,0.6)', 'rgba(255,82,82,0.55)'], borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor, font: chartFont } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont, callback: v => v + '%' } } } }
+  });
+
+  const dd = expanded.series?.target_downside || backtest.series?.drawdown || [];
+  new Chart(document.getElementById('chart-drawdown'), {
+    type: 'line',
+    data: { labels: dd.map((_, i) => i + 1), datasets: [{ data: dd, borderColor: '#ff5252', backgroundColor: 'rgba(255,82,82,0.08)', fill: true, borderWidth: 1.5, pointRadius: 0, tension: 0.3 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont, callback: v => v + '%' } } } }
+  });
+}
+
+document.getElementById('btn-run-backtest')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-run-backtest');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>Testing Earlier Predictions';
+  try {
+    const result = await apiPost('/api/backtest/refresh', { failed_only: true });
+    state.live.backtest = result.backtest;
+    initBacktestCharts();
+    const marketAuditPassed = result.backtest.expanded_markets?.leakage_audit?.passed !== false;
+    showToast(`${result.run.games} verified games tested across winner and secondary markets`, result.backtest.leakage_audit.passed && marketAuditPassed ? 'success' : 'error');
+  } catch (err) {
+    console.error(err);
+    showToast('Historical backtest could not complete', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-flask" style="margin-right:6px"></i>Run Historical Test';
+  }
+});
+
+/* ============================================
+   INIT
+   ============================================ */
+bootApp();
+</script>
+</body>
+</html>

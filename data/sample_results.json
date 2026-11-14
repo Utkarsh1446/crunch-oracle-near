@@ -1,0 +1,9 @@
+{
+  "results": [
+    {"competition": "epl", "home": "Arsenal FC", "away": "Chelsea FC", "home_goals": 2, "away_goals": 1},
+    {"competition": "epl", "home": "Liverpool FC", "away": "Manchester City", "home_goals": 1, "away_goals": 1},
+    {"competition": "epl", "home": "Tottenham Hotspur", "away": "Newcastle United", "home_goals": 0, "away_goals": 2},
+    {"competition": "epl", "home": "Manchester United", "away": "Aston Villa", "home_goals": 2, "away_goals": 2},
+    {"competition": "epl", "home": "Brighton", "away": "West Ham United", "home_goals": 1, "away_goals": 0}
+  ]
+}

@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+
+.env
+.env.*
+!.env.example
+
+*.log
+server.err
+data/*.tmp
+_golden/
+data/_*.json
+data/_*.txt
+
+contract/target/
+dashboard/dist/
+.near-credentials/
+*.demo.log
+
+# Proprietary engine state, never committed
+data/engine_state.json

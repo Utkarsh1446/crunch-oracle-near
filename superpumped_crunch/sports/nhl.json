@@ -1,0 +1,53 @@
+{
+  "id": "nhl",
+  "label": "NHL",
+  "unit": "goals",
+  "distribution": "poisson",
+  "fallback_home": 3.2,
+  "fallback_away": 2.9,
+  "recent_games": 20,
+  "margin_scale": 2.7,
+  "total_line": 6.5,
+  "safe_total_line": 3.5,
+  "ultra_safe_total_line": 1.5,
+  "alternate_delta": 1.0,
+  "spread_line": 1.5,
+  "spread_alternate_delta": 1.0,
+  "safe_spread_line": 4.5,
+  "spread_label": "Puck Line",
+  "team_threshold": 1.5,
+  "team_threshold_label": "Both Teams 2+ Goals",
+  "score_cap": 14,
+  "minimum_score": 0.15,
+  "maximum_total": 12.0,
+  "competitions": [
+    "nhl"
+  ],
+  "has_draw": false,
+  "total_label": "Game Total Goals",
+  "markets": [
+    "winner",
+    "total_ultra_safe",
+    "total_safe",
+    "total_low",
+    "total",
+    "total_high",
+    "spread",
+    "spread_alt",
+    "spread_safe",
+    "both_teams_threshold"
+  ],
+  "market_family": "both_teams_threshold",
+  "score_adjustments": [
+    -1.6,
+    -1.2,
+    -0.8,
+    -0.4,
+    0.0,
+    0.4,
+    0.8,
+    1.2,
+    1.6
+  ],
+  "ranking_margin_scale": 2.7
+}

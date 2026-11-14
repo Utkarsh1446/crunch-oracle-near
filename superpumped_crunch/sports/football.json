@@ -1,0 +1,62 @@
+{
+  "id": "football",
+  "label": "Football",
+  "unit": "goals",
+  "distribution": "poisson",
+  "fallback_home": 1.45,
+  "fallback_away": 1.2,
+  "recent_games": 12,
+  "margin_scale": 1.45,
+  "total_line": 2.5,
+  "safe_total_line": 0.5,
+  "alternate_delta": 1.0,
+  "spread_line": 0.5,
+  "spread_alternate_delta": 1.0,
+  "safe_spread_line": 2.5,
+  "spread_label": "Asian Handicap",
+  "score_cap": 10,
+  "minimum_score": 0.08,
+  "maximum_total": 6.5,
+  "competitions": [
+    "bundesliga",
+    "epl",
+    "fifa_wc",
+    "laliga",
+    "ligue1",
+    "seriea"
+  ],
+  "has_draw": true,
+  "draw_prior_prediction": 0.26,
+  "draw_prior_scorecard": 0.24,
+  "total_label": "Total Goals",
+  "markets": [
+    "winner",
+    "total_safe",
+    "total_low",
+    "total",
+    "total_high",
+    "spread",
+    "spread_alt",
+    "spread_safe",
+    "btts",
+    "home_team_total",
+    "away_team_total"
+  ],
+  "market_family": "team_totals",
+  "team_total_lines": {
+    "home": 1.5,
+    "away": 0.5
+  },
+  "score_adjustments": [
+    -1.2,
+    -0.9,
+    -0.6,
+    -0.3,
+    0.0,
+    0.3,
+    0.6,
+    0.9,
+    1.2
+  ],
+  "ranking_margin_scale": 1.45
+}

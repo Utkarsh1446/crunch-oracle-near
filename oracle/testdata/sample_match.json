@@ -1,0 +1,21 @@
+{
+  "matchID": 77500,
+  "matchDateTimeUTC": "2026-11-08T18:30:00",
+  "matchIsFinished": true,
+  "team1": {"teamName": "TSG Hoffenheim"},
+  "team2": {"teamName": "FC Schalke 04"},
+  "matchResults": [
+    {
+      "resultName": "Halbzeit",
+      "pointsTeam1": 1,
+      "pointsTeam2": 0,
+      "resultTypeID": 1
+    },
+    {
+      "resultName": "Endergebnis",
+      "pointsTeam1": 2,
+      "pointsTeam2": 1,
+      "resultTypeID": 2
+    }
+  ]
+}

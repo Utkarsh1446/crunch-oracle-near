@@ -1,0 +1,53 @@
+{
+  "id": "mlb",
+  "label": "MLB",
+  "unit": "runs",
+  "distribution": "poisson",
+  "fallback_home": 4.6,
+  "fallback_away": 4.3,
+  "recent_games": 20,
+  "margin_scale": 3.2,
+  "total_line": 8.5,
+  "safe_total_line": 5.5,
+  "ultra_safe_total_line": 3.5,
+  "alternate_delta": 1.0,
+  "spread_line": 1.5,
+  "spread_alternate_delta": 1.0,
+  "safe_spread_line": 4.5,
+  "spread_label": "Run Line",
+  "team_threshold": 2.5,
+  "team_threshold_label": "Both Teams 3+ Runs",
+  "score_cap": 24,
+  "minimum_score": 0.25,
+  "maximum_total": 18.0,
+  "competitions": [
+    "mlb"
+  ],
+  "has_draw": false,
+  "total_label": "Game Total Runs",
+  "markets": [
+    "winner",
+    "total_ultra_safe",
+    "total_safe",
+    "total_low",
+    "total",
+    "total_high",
+    "spread",
+    "spread_alt",
+    "spread_safe",
+    "both_teams_threshold"
+  ],
+  "market_family": "both_teams_threshold",
+  "score_adjustments": [
+    -2.0,
+    -1.5,
+    -1.0,
+    -0.5,
+    0.0,
+    0.5,
+    1.0,
+    1.5,
+    2.0
+  ],
+  "ranking_margin_scale": 3.2
+}

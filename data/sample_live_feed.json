@@ -1,0 +1,46 @@
+{
+  "fixtures": [
+    {
+      "competition": "epl",
+      "home": "Arsenal FC",
+      "away": "Chelsea FC",
+      "snapshot": "T-60m",
+      "odds": {"home": 1.92, "draw": 3.65, "away": 4.1},
+      "availability": {
+        "home_starters_missing": 1,
+        "away_starters_missing": 2,
+        "goalkeeper_missing": 0,
+        "confidence": 0.92,
+        "lineup_type": "predicted"
+      }
+    },
+    {
+      "competition": "epl",
+      "home": "Liverpool FC",
+      "away": "Manchester City",
+      "snapshot": "T-60m",
+      "odds": {"home": 2.8, "draw": 3.45, "away": 2.48},
+      "availability": {
+        "home_starters_missing": 0,
+        "away_starters_missing": 1,
+        "goalkeeper_missing": 0,
+        "confidence": 0.88,
+        "lineup_type": "predicted"
+      }
+    },
+    {
+      "competition": "epl",
+      "home": "Tottenham Hotspur",
+      "away": "Newcastle United",
+      "snapshot": "T-15m",
+      "odds": {"home": 2.22, "draw": 3.42, "away": 3.15},
+      "availability": {
+        "home_starters_missing": 2,
+        "away_starters_missing": 0,
+        "goalkeeper_missing": 1,
+        "confidence": 1.0,
+        "lineup_type": "official"
+      }
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Optional external analytics/data libraries.
+# Install when you want the /api/providers/sportsipy/* endpoints to call Sports-Reference via sportsipy.
+sportsipy
